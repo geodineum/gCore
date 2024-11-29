@@ -1,0 +1,61 @@
+name: Comprehensive Branch Protection
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - active_dev
+  pull_request:
+    branches:
+      - main
+      - staging
+      - active_dev
+
+jobs:
+  branch-protection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check if push is allowed
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/active_dev')
+        run: |
+          if [[ "${{ github.actor }}" != "nierto" ]]; then
+            echo "Direct pushes to protected branches are not allowed for non-maintainers."
+            exit 1
+          fi
+
+      - name: Run linters and tests
+        run: |
+          # Add your linting and testing commands here
+          # For example:
+          # npm run lint
+          # npm test
+
+      - name: Check for sensitive information
+        run: |
+          sensitive_info=$(grep -r -n -i -E "(^|[^A-Za-z])(API_KEY|SECRET)([^A-Za-z]|$)" --exclude-dir=.git --exclude="*.yml" --exclude="*.md" .)
+          if [ -n "$sensitive_info" ]; then
+            echo "Potential sensitive information found in the following locations:"
+            echo "$sensitive_info"
+            echo "Please review and remove any sensitive data before merging."
+            exit 1
+          fi
+
+      - name: Ensure README is up to date
+        run: |
+          if [[ $(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -c "README.md") -eq 0 ]]; then
+            echo "Please update the README.md file with any relevant changes."
+            exit 1
+          fi
+
+      - name: Validate branch name format for pull requests
+        if: github.event_name == 'pull_request'
+        run: |
+          branch_name="${{ github.head_ref }}"
+          if [[ ! $branch_name =~ ^(feature|bugfix|hotfix|docs)/[a-z0-9-]+$ ]]; then
+            echo "Invalid branch name format. Please use feature/, bugfix/, hotfix/, or docs/ prefix followed by a descriptive name."
+            exit 1
+          fi
