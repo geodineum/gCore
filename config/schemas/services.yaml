@@ -1,0 +1,142 @@
+---
+# Schema for services.yaml configuration
+type: object
+required:
+  - manifold_dimensions
+  - hash_grid_size
+  - base_services
+properties:
+  manifold_dimensions:
+    type: integer
+    minimum: 1
+    maximum: 100
+    description: "Number of capability dimensions in the service manifold"
+    
+  hash_grid_size:
+    type: integer
+    minimum: 1
+    maximum: 100
+    description: "Size of the spatial hash grid for service lookups"
+    
+  base_services:
+    type: object
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        $ref: "#/definitions/service"
+    description: "Base services that provide core system functionality"
+    
+  feature_services:
+    type: object
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        $ref: "#/definitions/service"
+    description: "Feature services that extend base functionality"
+    
+  service_layer:
+    type: object
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        $ref: "#/definitions/service"
+    description: "Services that compose feature services into business logic"
+    
+  microservices:
+    type: object
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        $ref: "#/definitions/service"
+    description: "Specialized microservices with specific business functionality"
+
+definitions:
+  service:
+    type: object
+    required:
+      - name
+      - type
+      - deployment
+      - required
+      - capabilities
+    properties:
+      name:
+        type: string
+        minLength: 1
+        description: "Human-readable service name"
+        
+      type:
+        type: string
+        enum: [core, feature, business, micro]
+        description: "Type of service determining its layer in the architecture"
+        
+      deployment:
+        type: string
+        enum: [local, distributed, mixed]
+        description: "Deployment strategy for the service"
+        
+      priority:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+        description: "Service priority for initialization order and resource allocation"
+        
+      required:
+        type: boolean
+        description: "Whether the service is required for system operation"
+        
+      metadata:
+        type: object
+        properties:
+          class:
+            type: string
+            description: "Service implementation class name"
+            
+          description:
+            type: string
+            description: "Service description"
+            
+          version:
+            type: string
+            pattern: "^\\d+\\.\\d+\\.\\d+$"
+            description: "Service version in semantic versioning format"
+            
+          author:
+            type: string
+            description: "Service author or team"
+            
+          tags:
+            type: array
+            items:
+              type: string
+            description: "Tags for service categorization"
+            
+        required: [class, description]
+        
+      capabilities:
+        type: object
+        patternProperties:
+          "^[a-zA-Z0-9_]+$":
+            type: object
+            required: [value, description]
+            properties:
+              value:
+                type: number
+                minimum: 0
+                maximum: 1
+                description: "Capability value between 0.0 and 1.0"
+                
+              description:
+                type: string
+                description: "Description of the capability"
+                
+        minProperties: 1
+        description: "Service capabilities in the capability manifold"
+        
+      traits:
+        type: array
+        items:
+          type: string
+          pattern: "^[a-zA-Z0-9_]+$"
+        description: "Traits used by the service for functionality composition"
+        
+      config:
+        type: object
+        description: "Service-specific configuration"

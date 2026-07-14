@@ -1,0 +1,111 @@
+# Multisite Configuration
+
+# Network settings
+network:
+  id: 'default'                 # Network identifier
+  discovery_ttl: 300            # Time to live for discovery cache (seconds)
+  registry_refresh: 600         # Refresh interval for network registry (seconds)
+  min_sites: 1                  # Minimum sites for network formation
+  max_sites: 100                # Maximum sites in the network
+
+# Site isolation
+isolation:
+  enabled: true                 # Enable site isolation
+  shared_capabilities:          # Capabilities that are shared across the network
+    - 'cache'
+    - 'storage'
+    - 'logging'
+    - 'metrics'
+    - 'health'
+  isolated_capabilities:        # Capabilities that are isolated to each site
+    - 'auth'
+    - 'user'
+    - 'content'
+    - 'commerce'
+    - 'media'
+  capability_boundary_scale: 0.8 # Scale factor for shared capabilities
+
+# Service discovery
+discovery:
+  local_first: true             # Try local services first
+  prefer_higher_roles: true     # Prefer services from higher role sites
+  min_services: 1               # Minimum services to return
+  max_services: 10              # Maximum services to return
+  require_all_capabilities: true # All capabilities must be matched
+  fallback_to_network: true     # Fallback to network if local services insufficient
+
+# Role evolution
+evolution:
+  claim_to_outpost: 604800      # Time for Claim to evolve to Outpost (seconds, 7 days)
+  outpost_to_settlement: 1000   # Requests for Outpost to evolve to Settlement
+  settlement_to_village: 0.4    # Top percentage for Settlement to evolve to Village
+  village_to_city: 0.2          # Top percentage for Village to evolve to City
+  city_to_capital: 1            # Highest rank for City to evolve to Capital
+
+# Scout evolution
+scout_evolution:
+  threshold: 0.5                # Operation threshold for scout evolution (50%)
+  prospector:                   # Data collection operations
+    - 'extract'
+    - 'crawl'
+    - 'collect'
+    - 'fetch'
+  trapper:                      # Event processing operations
+    - 'consume'
+    - 'filter'
+    - 'process'
+    - 'handle'
+  bounty_hunter:                # Workload distribution operations
+    - 'balance'
+    - 'distribute'
+    - 'route'
+    - 'forward'
+  sentinel:                     # Security operations
+    - 'monitor'
+    - 'protect'
+    - 'detect'
+    - 'verify'
+  oracle:                       # AI/ML operations
+    - 'predict'
+    - 'infer'
+    - 'classify'
+    - 'recommend'
+  surveyor:                     # Metrics operations
+    - 'measure'
+    - 'track'
+    - 'profile'
+    - 'analyze'
+
+# Organizational structures
+organizational:
+  territory_enabled: true       # Enable territory-based organization
+  region_enabled: true          # Enable region-based organization
+  frontier_enabled: true        # Enable frontier-based organization
+  basecamp_enabled: true        # Enable basecamp-based organization
+  gate_enabled: true            # Enable gate-based organization
+  
+  # Territory formation rules
+  territory:
+    min_instances: 3            # Minimum instances for territory formation
+    max_instances: 1000         # Maximum instances in a territory
+    
+  # Region formation rules
+  region:
+    min_instances: 2            # Minimum instances for region formation
+    max_instances: 100          # Maximum instances in a region
+    
+  # Frontier definition
+  frontier:
+    experimental_flag: true     # Flag for experimental features
+    beta_flag: true             # Flag for beta features
+    
+  # Basecamp definition
+  basecamp:
+    admin_capabilities:         # Required capabilities for basecamp
+      - 'admin'
+      - 'monitor'
+      - 'configure'
+      
+  # Gate definition
+  gate:
+    geographic_optimized: true  # Optimize gates by geographic location

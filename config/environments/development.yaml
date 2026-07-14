@@ -1,0 +1,57 @@
+core:
+  debug: true
+  service:
+    protocol: http  # Allow HTTP in development
+
+development:
+  show_debug_info: true
+  log_level: debug
+  profile_queries: true
+
+CacheManager:
+  config:
+    debug: true
+    scripts:
+      retry_attempts: 5
+
+SecurityManager:
+  config:
+    debug: true
+    hardening:
+      disable_information_disclosure: false
+      enforce_strong_passwords: true
+      secure_file_permissions: true
+      block_directory_listing: false
+      automatic_updates: false
+      disable_file_editing: false
+    
+# Development-specific security settings that are more permissive
+# but still maintain basic security protections
+security:
+  encryption:
+    algorithm: AES-256-GCM
+    key_rotation_days: 365  # Longer key rotation in development
+    use_hardware_security: false  # No hardware security in development
+  authentication:
+    require_2fa: false  # No 2FA requirement in development
+    password_min_length: 8  # Shorter passwords allowed in development
+    brute_force_protection: true  # Still protect against brute force
+    session_lifetime: 86400  # Longer sessions in development (24 hours)
+  protection:
+    xss_prevention: true  # Always maintain XSS protection
+    csrf_protection: true  # Always maintain CSRF protection
+    header_security: true  # Always maintain header security
+    sql_injection_prevention: true  # Always maintain SQL injection protection
+    file_protection: true  # Always maintain file protection
+  monitoring:
+    alert_suspicious_activity: true  # Still alert on suspicious activity
+    log_security_events: true  # Still log security events
+    real_time_monitoring: false  # Disable real-time monitoring in development
+
+# Development debugging aids
+debug:
+  security_bypass_tracking: true  # Track all security bypasses
+  detailed_error_messages: true  # Show detailed error messages
+  validation_warnings: true  # Show validation warnings
+  security_header_reporting: true  # Report security header violations
+  performance_tracking: true  # Track security feature performance impact

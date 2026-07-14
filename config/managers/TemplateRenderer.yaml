@@ -1,0 +1,137 @@
+# =============================================================================
+# TemplateRenderer - Unified Configuration
+# =============================================================================
+# CONSOLIDATED: managers/TemplateRenderer.yaml + template_renderer.yaml
+# Version: 2.0.0 (Unified)
+#
+# This file is the SINGLE SOURCE OF TRUTH for TemplateRenderer configuration.
+# Controls template rendering, discovery, HTMX integration, and gNode Tera engine.
+# =============================================================================
+
+enabled: true
+implementation: gnode
+requires:
+  - gnode_client
+
+# =============================================================================
+# CORE CONFIGURATION
+# =============================================================================
+config:
+  debug: false
+  use_gnode: true
+  default_ttl: 3600
+  cache_output: true
+  max_template_size: 524288  # 512KB
+  max_template_id_length: 255
+
+# =============================================================================
+# RENDERING SETTINGS
+# =============================================================================
+rendering:
+  timeout_ms: 5000
+  max_recursion_depth: 10
+  auto_escape: true  # XSS prevention
+  strict_variables: false
+  sandbox_enabled: true
+  max_render_time_ms: 5000
+  max_output_size: 1048576  # 1MB
+
+# =============================================================================
+# TEMPLATE DISCOVERY
+# =============================================================================
+discovery:
+  enabled: true
+  similarity_threshold: 0.3  # Max distance for matching (0.0-1.0)
+  capability_filters:
+    default:
+      complexity: ['<', 0.5]  # Prefer simpler
+      cacheability: ['>', 0.7]  # Prefer cacheable
+
+# =============================================================================
+# CAPABILITY EXTRACTION (8D vector)
+# =============================================================================
+capabilities:
+  html: 1.0
+  complexity: 0.3  # From LOC
+  interactivity: 0.5  # Forms, inputs, scripts
+  data_density: 0.4  # Variable density
+  reusability: 0.8  # Based on includes
+  cacheability: 0.9  # 1.0 - density × interactivity
+  semantic_layout: 0.7  # HTML5 semantic elements
+  render_cost: 0.5  # Estimated rendering cost
+
+# =============================================================================
+# DEPENDENCY TRACKING
+# =============================================================================
+dependencies:
+  track_dependencies: true
+  enable_transitive_invalidation: true
+  cycle_detection: true
+  max_dependencies: 100
+
+# =============================================================================
+# HTMX INTEGRATION
+# =============================================================================
+htmx:
+  enabled: true
+  default_cache_control: "public, max-age=31536000, immutable"
+  generate_etag: true
+  default_trigger: null
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+security:
+  allow_path_traversal: false
+  max_template_size: 524288  # 512KB
+  validate_tera_syntax: true
+  whitelist_includes: []
+
+# =============================================================================
+# FORMAT INTEGRATION
+# =============================================================================
+format:
+  detection: true
+  default_content_type: "text/html"
+  supported_formats:
+    - "text/html"
+    - "text/plain"
+    - "application/xml"
+    - "application/json"
+
+# =============================================================================
+# GEOMETRIC TOPOLOGY INTEGRATION
+# =============================================================================
+topology:
+  register_as_service: true
+  service_id_prefix: "template:"
+  update_on_register: true
+  update_on_delete: true
+
+# =============================================================================
+# PERFORMANCE
+# =============================================================================
+performance:
+  batch_registration: true
+  connection_pool_size: 16
+  preload_templates: false
+  preload_list: []
+
+# =============================================================================
+# METRICS AND MONITORING
+# =============================================================================
+metrics:
+  track_performance: true
+  log_slow_renders: true
+  slow_threshold_ms: 100
+  report_metrics_interval: 300
+  track_cache_efficiency: true
+
+# =============================================================================
+# DEVELOPMENT AND DEBUGGING
+# =============================================================================
+development:
+  log_template_access: false
+  log_variable_usage: false
+  dump_context_on_error: false
+

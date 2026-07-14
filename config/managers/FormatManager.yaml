@@ -1,0 +1,152 @@
+# =============================================================================
+# FormatManager - Unified Configuration
+# =============================================================================
+# CONSOLIDATED: managers/FormatManager.yaml + format_manager.yaml
+# Version: 2.0.0 (Unified)
+#
+# This file is the SINGLE SOURCE OF TRUTH for FormatManager configuration.
+# Controls format detection, validation, conversion, and gNode integration.
+# =============================================================================
+
+enabled: true
+implementation: gnode
+requires:
+  - gnode_client
+
+# =============================================================================
+# CORE CONFIGURATION
+# =============================================================================
+config:
+  debug: false
+  use_gnode: true
+  auto_detect: true
+  validation_mode: "strict"  # strict | lenient | none
+  cache_detection_results: true
+
+# =============================================================================
+# FORMAT DETECTION
+# =============================================================================
+detection:
+  mode: "pattern"  # pattern (regex) | heuristic
+  confidence_threshold: 0.7
+  detection_cache_ttl: 300
+  pattern_cache: true
+  pattern_timeout_ms: 100
+  max_pattern_length: 1000
+  case_sensitive: true
+
+# =============================================================================
+# FORMAT VALIDATION
+# =============================================================================
+validation:
+  validate_on_register: true
+  validate_on_convert: true
+  max_validation_errors: 10
+  schema_draft: "draft-07"
+  strict_schema: true
+  coerce_types: false
+  resolve_refs: true
+
+# =============================================================================
+# FORMAT CONVERSION
+# =============================================================================
+conversion:
+  timeout_ms: 5000
+  preserve_unknown_fields: false
+  intermediate_format: "json"
+  allow_lossy_conversion: false
+
+# =============================================================================
+# FORMAT REGISTRY
+# =============================================================================
+registry:
+  max_formats: 100
+  format_ttl: 86400  # 24 hours, 0 = never
+  allow_format_updates: true
+  versioning_enabled: true
+
+# =============================================================================
+# COMMON FORMAT PATTERNS (Pre-registered)
+# =============================================================================
+patterns:
+  json_basic:
+    enabled: true
+    patterns: ['^\s*\{', '^\s*\[']
+    confidence: 0.8
+  xml:
+    enabled: true
+    patterns: ['^\s*<\?xml', '^\s*<[a-zA-Z]']
+    confidence: 0.9
+  yaml:
+    enabled: true
+    patterns: ['^---', '^\w+:\s']
+    confidence: 0.7
+  msgpack:
+    enabled: false  # Binary format detection disabled by default
+    confidence: 0.6
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+security:
+  sandbox_conversion: true
+  max_message_size: 1048576  # 1MB
+  max_schema_size: 102400  # 100KB
+  max_patterns_per_format: 10
+  blacklist_patterns: []  # ReDoS prevention
+  sanitize_output: true
+
+# =============================================================================
+# API INTEGRATION
+# =============================================================================
+api:
+  version_header: "X-API-Version"
+  accept_header_parsing: true
+  content_type_override: false
+  webhook_auto_detection: true
+
+# =============================================================================
+# PERFORMANCE
+# =============================================================================
+performance:
+  batch_size: 50
+  connection_pool_size: 16
+  async_operations: false
+  parallel_detection: false
+
+# =============================================================================
+# METRICS AND MONITORING
+# =============================================================================
+metrics:
+  track_performance: true
+  log_slow_operations: true
+  slow_threshold_ms: 200
+  report_metrics_interval: 300
+  track_detection_accuracy: true
+  track_conversion_failures: true
+
+# =============================================================================
+# FORMAT EXAMPLES
+# =============================================================================
+examples:
+  store_examples: true
+  max_per_format: 5
+  max_size: 10240  # 10KB
+
+# =============================================================================
+# BACKWARD COMPATIBILITY
+# =============================================================================
+compatibility:
+  support_legacy_formats: true
+  migrate_on_load: true
+  deprecation_warnings: true
+
+# =============================================================================
+# DEVELOPMENT AND DEBUGGING
+# =============================================================================
+development:
+  log_all_detections: false
+  log_all_conversions: false
+  dump_schemas_on_error: false
+  validate_test_messages: true
+

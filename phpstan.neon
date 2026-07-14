@@ -1,0 +1,34 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    phpVersion: 80000
+    paths:
+        - Modules
+    excludePaths:
+        analyseAndScan:
+            - Modules/*/Templates/*
+        analyse:
+            # Dead-code adapter files with namespace/interface drift.
+            # File path says Adapters/Main/ but classes declare
+            # namespace Adapters\System — cannot autoload under PSR-4,
+            # and interfaces they import (Interfaces\System\*Interface)
+            # don't exist (actual interfaces are at Interfaces\Main\*).
+            # Zero live callers. Deletion deferred to Commit 2.5 per
+            # "broader namespace-drift sweep" post-Tier-0 TODO.
+            - Modules/Core/Adapters/Main/StandaloneConfig.php
+            - Modules/Core/Adapters/Main/StandaloneEvents.php
+            - Modules/Core/Adapters/Main/StandalonePlatform.php
+            # Interface-contract debt: classes implements-interface but
+            # miss abstract methods OR signatures non-contravariant.
+            # Real bugs, surgical fix deferred to Commit 2.5 per
+            # P-DEEP-25 scope decision.
+            - Modules/Core/Adapters/Error/StandaloneErrorLogger.php
+            - Modules/Core/Adapters/Error/StandaloneErrorNotifier.php
+            - Modules/Core/Adapters/Error/StandaloneErrorUI.php
+            - Modules/Core/Adapters/Security/StandaloneCapabilityChecker.php
+    bootstrapFiles:
+        - vendor/autoload.php
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

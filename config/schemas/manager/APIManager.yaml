@@ -1,0 +1,186 @@
+# Schema for APIManager configuration
+$schema: "http://json-schema.org/draft-07/schema#"
+title: APIManager Configuration Schema
+description: Schema for validating APIManager configuration
+
+type: object
+required:
+  - enabled
+  - api_version
+  - namespace
+properties:
+  enabled:
+    type: boolean
+    description: Whether the API manager is enabled
+  
+  api_version:
+    type: string
+    description: API version string
+  
+  namespace:
+    type: string
+    description: Base namespace for API routes
+    
+  debug:
+    type: boolean
+    description: Enable debug mode
+    
+  cache_enabled:
+    type: boolean
+    description: Whether response caching is enabled
+    
+  cache_ttl:
+    type: integer
+    description: Default cache TTL in seconds
+    minimum: 0
+    
+  rate_limiting:
+    type: boolean
+    description: Whether rate limiting is enabled
+    
+  rate_limit_window:
+    type: integer
+    description: Rate limit window in seconds
+    minimum: 1
+    
+  rate_limit_max:
+    type: integer
+    description: Maximum requests in rate limit window
+    minimum: 1
+    
+  batch_size_limit:
+    type: integer
+    description: Maximum batch request size
+    minimum: 1
+    
+  connection_pool_size:
+    type: integer
+    description: ValKey connection pool size
+    minimum: 1
+    
+  metrics_enabled:
+    type: boolean
+    description: Whether metrics collection is enabled
+    
+  validation_enabled:
+    type: boolean
+    description: Whether request validation is enabled
+    
+  enable_websocket:
+    type: boolean
+    description: Whether WebSocket support is enabled
+    
+  enable_admin_ui:
+    type: boolean
+    description: Whether admin UI is enabled
+    
+  adaptive_backoff:
+    type: boolean
+    description: Whether adaptive backoff is enabled
+    
+  cache_ttls:
+    type: object
+    description: Cache TTLs by category
+    additionalProperties:
+      type: integer
+      minimum: 0
+    
+  cache_groups:
+    type: object
+    description: Cache groups configuration
+    additionalProperties:
+      type: string
+      
+  rate_limits:
+    type: object
+    description: Rate limits by category
+    additionalProperties:
+      type: object
+      required: [max, window]
+      properties:
+        max:
+          type: integer
+          minimum: 1
+        window:
+          type: integer
+          minimum: 1
+          
+  rate_limit_exclusions:
+    type: object
+    description: Rate limit exclusions
+    properties:
+      ips:
+        type: array
+        items:
+          type: string
+      roles:
+        type: array
+        items:
+          type: string
+      capabilities:
+        type: array
+        items:
+          type: string
+          
+  dynamic_endpoints:
+    type: object
+    description: Dynamic endpoint configuration
+    additionalProperties:
+      type: object
+      required: [route, methods]
+      properties:
+        route:
+          type: string
+        methods:
+          type: array
+          items:
+            type: string
+            enum: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+        permission_callback:
+          type: string
+        handler:
+          type: object
+          properties:
+            type:
+              type: string
+            callback:
+              type: string
+              
+  websocket_channels:
+    type: object
+    description: WebSocket channel configuration
+    additionalProperties:
+      type: object
+      properties:
+        description:
+          type: string
+        public:
+          type: boolean
+          
+  traits:
+    type: object
+    description: Trait configuration
+    additionalProperties:
+      oneOf:
+        - type: boolean
+        - type: object
+          required: [enabled]
+          properties:
+            enabled:
+              type: boolean
+            dependencies:
+              type: array
+              items:
+                type: string
+            capabilities:
+              type: object
+              additionalProperties:
+                type: number
+                minimum: 0
+                maximum: 1
+            features:
+              type: object
+              additionalProperties:
+                type: boolean
+                
+additionalProperties: true

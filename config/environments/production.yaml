@@ -1,0 +1,44 @@
+cluster:
+  enabled: false
+  nodes: "${CLUSTER_NODES:-127.0.0.1:6379}"
+  node_role: standalone
+  discovery:
+    method: static
+    hosts: []
+  sync:
+    interval: 300
+    strategy: full
+
+# Production-specific security settings
+security:
+  encryption:
+    algorithm: AES-256-GCM
+    key_rotation_days: 30
+    use_hardware_security: true
+  authentication:
+    require_2fa: true
+    password_min_length: 14
+    brute_force_protection: true
+    session_lifetime: 1800
+  protection:
+    xss_prevention: true
+    csrf_protection: true
+    header_security: true
+    sql_injection_prevention: true
+    file_protection: true
+  monitoring:
+    alert_suspicious_activity: true
+    log_security_events: true
+    real_time_monitoring: true
+  compliance:
+    gdpr: true
+    ccpa: true
+    hipaa: false
+    pci: false
+  hardening:
+    disable_information_disclosure: true
+    enforce_strong_passwords: true
+    secure_file_permissions: true
+    block_directory_listing: true
+    automatic_updates: true
+    disable_file_editing: true

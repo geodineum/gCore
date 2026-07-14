@@ -1,0 +1,265 @@
+---
+# Schema for environment-specific configuration files
+type: object
+properties:
+  debug:
+    type: boolean
+    description: "Debug mode flag"
+    
+  log_level:
+    type: string
+    enum: [debug, info, notice, warning, error, critical, alert, emergency]
+    description: "Default logging level"
+    
+  paths:
+    type: object
+    properties:
+      base:
+        type: string
+        description: "Base application path"
+      config:
+        type: string
+        description: "Configuration directory path"
+      logs:
+        type: string
+        description: "Log directory path"
+      temp:
+        type: string
+        description: "Temporary directory path"
+      assets:
+        type: string
+        description: "Assets directory path"
+    description: "System paths configuration"
+    
+  valkey:
+    type: object
+    properties:
+      host:
+        type: string
+        description: "ValKey host"
+      port:
+        type: integer
+        minimum: 1
+        maximum: 65535
+        description: "ValKey port"
+      user:
+        type: string
+        description: "ValKey ACL username"
+      password:
+        type: string
+        description: "ValKey password (prefer password_file)"
+      password_file:
+        type: string
+        description: "Path to file containing ValKey password"
+      auth:
+        type: string
+        description: "ValKey authentication (legacy, use user + password_file)"
+      db:
+        type: integer
+        minimum: 0
+        description: "ValKey database number"
+      ssl:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            description: "Enable SSL/TLS for ValKey connection"
+          verify_peer:
+            type: boolean
+            description: "Verify SSL/TLS peer certificate"
+          cert_file:
+            type: string
+            description: "Path to client certificate file for TLS"
+          key_file:
+            type: string
+            description: "Path to client key file for TLS"
+          ca_file:
+            type: string
+            description: "Path to CA certificate file for TLS"
+        description: "SSL/TLS configuration for ValKey connection"
+      connection_timeout:
+        type: number
+        minimum: 0.1
+        maximum: 60
+        description: "Connection timeout in seconds"
+      read_timeout:
+        type: number
+        minimum: 0.1
+        maximum: 300
+        description: "Read timeout in seconds"
+      retry_interval:
+        type: number
+        minimum: 0.1
+        maximum: 60
+        description: "Retry interval in seconds"
+      retry_timeout:
+        type: number
+        minimum: 1
+        maximum: 300
+        description: "Retry timeout in seconds"
+      cluster:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            description: "Enable ValKey cluster mode"
+          nodes:
+            type: array
+            items:
+              type: string
+            description: "Cluster node addresses"
+          read_preference:
+            type: string
+            enum: [primary, secondary, nearest]
+            description: "Cluster read preference"
+        description: "ValKey cluster configuration"
+    required: [host, port]
+    description: "ValKey connection configuration (canonical key, 'redis' supported for backward compatibility)"
+    
+  security:
+    type: object
+    properties:
+      enforce_https:
+        type: boolean
+        description: "Enforce HTTPS connections"
+      sanitize_input:
+        type: boolean
+        description: "Sanitize all user input"
+      csrf_protection:
+        type: boolean
+        description: "Enable CSRF protection"
+      auth_required:
+        type: boolean
+        description: "Require authentication for all operations"
+      auth_timeout:
+        type: integer
+        minimum: 60
+        maximum: 86400
+        description: "Authentication timeout in seconds"
+      firewall:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            description: "Enable firewall protection"
+          block_after_attempts:
+            type: integer
+            minimum: 1
+            description: "Block after this many failed attempts"
+          block_time:
+            type: integer
+            minimum: 60
+            description: "Block time in seconds"
+        description: "Firewall configuration"
+      audit:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            description: "Enable security audit logging"
+          log_login_attempts:
+            type: boolean
+            description: "Log all login attempts"
+          log_admin_actions:
+            type: boolean
+            description: "Log all admin actions"
+        description: "Security audit configuration"
+    description: "Security configuration for this environment"
+    
+  error:
+    type: object
+    properties:
+      log_php_errors:
+        type: boolean
+        description: "Log PHP errors"
+      log_exceptions:
+        type: boolean
+        description: "Log exceptions"
+      error_level:
+        type: integer
+        description: "PHP error reporting level"
+      display_errors:
+        type: boolean
+        description: "Display errors to users"
+      notify_admin:
+        type: boolean
+        description: "Notify admin of errors"
+      notify_threshold:
+        type: string
+        enum: [debug, info, notice, warning, error, critical, alert, emergency]
+        description: "Minimum error level for admin notification"
+      notify_email:
+        type: string
+        description: "Admin notification email address"
+    description: "Error handling configuration for this environment"
+    
+  cache:
+    type: object
+    properties:
+      enable_streams:
+        type: boolean
+        description: "Enable Redis/ValKey streams for cache events"
+      enable_pipelining:
+        type: boolean
+        description: "Enable Redis/ValKey pipelining for cache operations"
+      default_ttl:
+        type: integer
+        minimum: 0
+        description: "Default TTL for cache items in seconds (0 = no expiration)"
+      prefix:
+        type: string
+        description: "Prefix for all cache keys"
+    description: "Cache configuration for this environment"
+    
+  wordpress:
+    type: object
+    properties:
+      integration:
+        type: boolean
+        description: "Enable WordPress integration"
+      use_wp_cache:
+        type: boolean
+        description: "Use WordPress object cache"
+      use_wp_cron:
+        type: boolean
+        description: "Use WordPress cron for scheduled tasks"
+      admin_url:
+        type: string
+        description: "WordPress admin URL"
+      rest_prefix:
+        type: string
+        description: "REST API prefix"
+      capability_map:
+        type: object
+        patternProperties:
+          "^[a-zA-Z0-9_]+$":
+            type: string
+        description: "Mapping of gCore capabilities to WordPress capabilities"
+    description: "WordPress integration configuration for this environment"
+    
+  multisite:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        description: "Enable multi-site support"
+      discovery_mode:
+        type: string
+        enum: [manual, auto, hybrid]
+        description: "Site discovery mode"
+      fallback_to_local:
+        type: boolean
+        description: "Fallback to local services if network is unavailable"
+      site_id:
+        type: string
+        description: "Site identifier"
+      discovery_hosts:
+        type: array
+        items:
+          type: string
+        description: "Hosts to use for site discovery"
+      network_role:
+        type: string
+        enum: [settlement, outpost, city, capital, sovereign]
+        description: "Site role in the network"
+    description: "Multi-site configuration for this environment"

@@ -1,0 +1,19 @@
+core:
+  environment: development
+  debug: true
+
+storage:
+  host: 127.0.0.1
+  port: 6379
+  auth: null
+  tls: false
+
+api:
+  port: 8080
+  cors:
+    origins: ["*"]
+
+message_broker:
+  queue_prefix: "mb:queue:"
+  max_queue_size: 10000
+  message_ttl: 86400

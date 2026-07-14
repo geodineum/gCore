@@ -1,0 +1,33 @@
+enabled: false  # Global microservice toggle
+factories:
+  julia:
+    class: gCore\Modules\Core\Factories\JuliaMicroserviceFactory
+    enabled: true
+    config:
+      host: "${MICROSERVICE_HOST:-127.0.0.1}"
+      port_range: [21089, 23089]
+      startup_timeout: 30
+      health_check_interval: 5
+  python:
+    class: gCore\Modules\Core\Factories\PythonMicroserviceFactory
+    enabled: false
+
+deployment:
+  instances:
+    min: 1              # Minimum instances to maintain
+    max: 10             # Maximum instances allowed
+    scaling_factor: 1.5  # Growth rate for auto-scaling
+  health_check:
+    interval: 30        # Health check frequency in seconds
+    timeout: 5          # Health check timeout
+    retries: 3          # Retries before marking unhealthy
+  auto_restart: true    # Restart failed instances
+
+monitoring:
+  metrics_enabled: true
+  tracing_enabled: false
+  log_level: info
+  health_check:
+    interval: 30
+    timeout: 5
+    retries: 3

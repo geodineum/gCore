@@ -1,0 +1,579 @@
+# =============================================================================
+# gCore Unified Service Registry
+# =============================================================================
+# CONSOLIDATED: services.yaml + service_topology.yaml + dependencies.yaml
+# Version: 2.0.0 (Unified)
+#
+# This file is the source of truth for the service TOPOLOGY: which managers
+# exist, their `category`/`priority` (which drive initialization order in
+# gCore::bootstrapRequiredServices), dependencies, and config. compile-config.php
+# compiles it into ValKey `{site_id}:gcore:config:services` (runtime fast-path);
+# it is also the Tier-2 fallback when ValKey is unavailable.
+#
+# NOTE on `class:` — it is NOT authoritative for manager RESOLUTION. At
+# instantiation gCore calls ExtensionResolver::resolve() (populated by
+# Modules/Managers/Stubs/register.php) and OVERRIDES `class` with the resolved
+# base-or-stub class (gCore.php:1052-1066). register.php is the source of truth
+# for which concrete class loads. Keep `class:` here accurate anyway (it is the
+# pre-override default + Tier-2 fallback seed), but reconcile it against
+# register.php / on-disk, never the reverse.
+#
+# Service Categories:
+#   - category: core        → Required base managers (priority 0-10)
+#   - category: base        → Standard managers (priority 11-50)
+#   - category: feature     → Optional features (priority 51-99)
+#   - category: extension     → External packages (priority 100+)
+#
+# gNode Integration:
+#   - gnode_required: false   → Works standalone with fallbacks
+#   - gnode_required: true    → Requires gNode, throws exception without it
+#   - extension_bundle: gnode   → Included in gNode bundle
+# =============================================================================
+version: "2.0.0"
+
+# Default values applied to all services unless overridden
+defaults:
+  type: singleton
+  tier: TOOL
+  deployment: single
+  required: false
+  gnode_required: false
+  enabled: true
+
+# =============================================================================
+# CORE SERVICES (priority 0-10)
+# These load first and have no dependencies on other gCore services
+# =============================================================================
+services:
+  # ---------------------------------------------------------------------------
+  # gNode Client - gNode protocol integration (loads first if available)
+  # ---------------------------------------------------------------------------
+  gnode_client:
+    class: gCore\gNode\gNodeClient
+    category: core
+    priority: 0
+    dependencies: []
+    description: gNode protocol client for distributed services
+    config:
+      use_composer: true
+    capabilities:
+      - gnode_protocol
+      - distributed_state
+      - stream_processing
+
+  # ---------------------------------------------------------------------------
+  # SecurityManager - Core security (authentication, encryption, validation)
+  # ---------------------------------------------------------------------------
+  SecurityManager:
+    class: gCore\Modules\Managers\Base\SecurityManager\SecurityManager
+    category: core
+    priority: 1
+    required: true
+    dependencies: []
+    description: Core security management - encryption, authentication, validation
+    state_vector: [encryption, authentication, validation]
+    capabilities:
+      encryption: 1.0
+      authentication: 1.0
+      validation: 1.0
+      authorization: 1.0
+      sanitization: 0.9
+      monitoring: 0.8
+    traits:
+      - crypto
+      - dataSanitization
+      - securityRules
+      - securityMonitoring
+      - headerSecurity
+      - alerting
+      - wordpressIntegration
+      - advancedAuthentication
+      - advancedCrypto
+      - advancedRules
+      - xssPrevention
+      - hardwareSecurity
+
+  # ---------------------------------------------------------------------------
+  # ErrorManager - Centralized error tracking and logging
+  # ---------------------------------------------------------------------------
+  ErrorManager:
+    class: gCore\Modules\Managers\Base\ErrorManager\ErrorManager
+    category: core
+    priority: 2
+    required: true
+    dependencies: []
+    description: Centralized error tracking, logging, and notification system
+    state_vector: [logging, monitoring]
+    capabilities:
+      logging: 1.0
+      notifications: 1.0
+      error_tracking: 1.0
+      monitoring: 0.9
+
+  # ---------------------------------------------------------------------------
+  # CacheManager - Distributed caching with ValKey
+  # ---------------------------------------------------------------------------
+  CacheManager:
+    class: gCore\Modules\Managers\Base\CacheManager\CacheManager
+    category: core
+    priority: 3
+    required: true
+    dependencies: []
+    description: High-performance distributed caching system
+    state_vector: [distribution, persistence]
+    capabilities:
+      distribution: 1.0
+      persistence: 1.0
+      broker: 0.9
+      streams: 0.9
+    traits:
+      - streamCapabilities
+    # Capability requirements (from dependencies.yaml)
+    requires_capabilities:
+      logging: 0.8
+      error_tracking: 0.9
+
+  # ---------------------------------------------------------------------------
+  # TemplateManager - Template rendering with Tera engine
+  # ---------------------------------------------------------------------------
+  TemplateManager:
+    class: gCore\Modules\Managers\Stubs\TemplateManagerStub
+    category: core
+    priority: 4
+    required: true
+    dependencies:
+      - CacheManager
+      - SecurityManager
+    description: Template rendering with Tera engine, forms, and HTMX fragments
+    state_vector: [template, rendering, forms, library]
+    capabilities:
+      - template
+      - rendering
+      - tera_engine
+      - template_registry
+      - form_handling
+      - csrf_protection
+      - htmx_fragments
+    traits:
+      - templateRegistry
+      - formHandler
+
+# =============================================================================
+# BASE SERVICES (priority 5-50)
+# Standard managers with some dependencies
+# =============================================================================
+
+  # ---------------------------------------------------------------------------
+  # FormatManager - Data format detection and conversion (gNode required)
+  # ---------------------------------------------------------------------------
+  FormatManager:
+    class: gCore\Modules\Managers\Base\FormatManager\FormatManager
+    category: base
+    priority: 5
+    dependencies:
+      - gnode_client
+    gnode_required: true
+    extension_bundle: gnode
+    description: Data format detection, conversion, and validation
+    state_vector: [format, detection, conversion, validation]
+    capabilities:
+      - format
+      - detection
+      - conversion
+      - validation
+      - jsonschema
+
+  # ---------------------------------------------------------------------------
+  # TopologyManager - Geometric service discovery (gNode required)
+  # ---------------------------------------------------------------------------
+  TopologyManager:
+    class: gCore\Modules\Managers\Stubs\TopologyManagerStub
+    category: base
+    priority: 5
+    deployment: distributed
+    dependencies:
+      - gnode_client
+      - CacheManager
+    gnode_required: true
+    extension_bundle: gnode
+    description: Geometric service discovery and capability vectors
+    state_vector: [topology, discovery, geometry]
+    capabilities:
+      - geometric_discovery
+      - capability_vectors
+      - dependency_resolution
+      - service_mesh
+      - rust_ffi_integration
+
+  # ---------------------------------------------------------------------------
+  # APIManager - REST API routing and handling
+  # ---------------------------------------------------------------------------
+  APIManager:
+    class: gCore\Modules\Managers\Base\APIManager\APIManager
+    category: base
+    priority: 6
+    dependencies: []
+    description: RESTful and WebSocket API service layer
+    state_vector: [api, routing]
+    capabilities:
+      api: 1.0
+      routing: 1.0
+      rest: 0.9
+      websocket: 0.8
+    requires_capabilities:
+      authentication: 0.9
+      authorization: 0.9
+      logging: 0.9
+      distribution: 0.9
+
+  # ---------------------------------------------------------------------------
+  # SEOManager - SEO, OpenGraph, Schema.org
+  # ---------------------------------------------------------------------------
+  SEOManager:
+    class: gCore\Modules\Managers\Stubs\SEOManagerStub
+    category: base
+    priority: 7
+    required: true
+    dependencies:
+      - CacheManager
+    description: SEO optimization, OpenGraph, Twitter Cards, Schema.org
+    state_vector: [seo, opengraph, schema]
+    capabilities:
+      - opengraph
+      - twitter_cards
+      - schema_org
+      - sitemap
+      - meta_tags
+
+  # ---------------------------------------------------------------------------
+  # OptimizationManager - Asset optimization and performance
+  # ---------------------------------------------------------------------------
+  OptimizationManager:
+    class: gCore\Modules\Managers\Stubs\OptimizationManagerStub
+    category: base
+    priority: 8
+    required: true
+    dependencies:
+      - CacheManager
+    description: Asset optimization, lazy loading, preloading, compression
+    state_vector: [optimization, performance]
+    capabilities:
+      - asset_optimization
+      - lazy_loading
+      - preloading
+      - compression
+
+  # ---------------------------------------------------------------------------
+  # ManifestManager - PWA manifests and icons
+  # ---------------------------------------------------------------------------
+  ManifestManager:
+    class: gCore\Modules\Managers\Stubs\ManifestManagerStub
+    category: base
+    priority: 9
+    required: true
+    dependencies:
+      - CacheManager
+    description: Web app manifests, PWA support, icons
+    state_vector: [manifest, pwa]
+    capabilities:
+      manifest: 1.0
+      caching: 0.7
+      web_manifest: 1.0
+      pwa_support: 1.0
+      icons: 1.0
+    requires_capabilities:
+      logging: 0.8
+      distribution: 0.9
+      api: 0.8
+
+# =============================================================================
+# FEATURE SERVICES (priority 51-99)
+# Optional functionality
+# =============================================================================
+
+  # ---------------------------------------------------------------------------
+  # CookieManager - Secure cookie management
+  # ---------------------------------------------------------------------------
+  CookieManager:
+    class: gCore\Modules\Managers\Base\CookieManager\CookieManager
+    category: feature
+    priority: 12
+    dependencies:
+      - ErrorManager
+      - CacheManager
+    description: Secure cookie management with encryption and validation
+    state_vector: [cookies]
+    capabilities:
+      cookies: 1.0
+      encryption: 0.6
+    requires_capabilities:
+      logging: 0.8
+      distribution: 0.8
+      state: 0.8
+
+  # ---------------------------------------------------------------------------
+  # StateManager - Distributed state management with ValKey
+  # ---------------------------------------------------------------------------
+  StateManager:
+    class: gCore\Modules\Managers\Base\StateManager\StateManager
+    category: base
+    priority: 4
+    deployment: distributed
+    dependencies:
+      - gnode_client
+    gnode_required: false    # Falls back to in-memory stub when gNode unavailable
+    description: Distributed state management with ValKey-backed persistence, transactions, observers, and history tracking
+    state_vector: [state_management, transactions, persistence]
+    capabilities:
+      state_management: 1.0     # Core get/set/remove operations
+      persistence: 1.0          # ValKey-backed storage across requests
+      transactions: 0.9         # Distributed transactions with rollback
+      observability: 0.9        # State change observers via pub/sub
+      history: 0.8              # Bounded change history tracking
+      atomic_counters: 1.0      # Atomic increment/decrement operations
+
+  # ---------------------------------------------------------------------------
+  # WordPressManager - WordPress environment management
+  # ---------------------------------------------------------------------------
+  WordPressManager:
+    class: gCore\Modules\Managers\Base\WordPressManager\WordPressManager
+    category: base
+    priority: 4
+    dependencies: []
+    gnode_required: false    # Operates on $wpdb directly, no gNode needed
+    description: WordPress environment management and GDPR-compliant PII scrubbing
+    state_vector: [wordpress, compliance]
+    capabilities:
+      pii_scrubbing: 1.0        # GDPR-compliant PII removal
+      environment_info: 1.0     # WordPress environment detection
+
+  # ---------------------------------------------------------------------------
+  # MetricsManager - ValKey metrics reader
+  # ---------------------------------------------------------------------------
+  MetricsManager:
+    class: gCore\Modules\Managers\Stubs\MetricsManagerStub
+    category: feature
+    priority: 15
+    dependencies:
+      - gnode_client
+      - CacheManager
+    gnode_required: false  # Works in read-only mode without gNode
+    description: Thin PHP interface to read ValKey metrics tracked by Lua scripts
+    state_vector: [metrics, monitoring]
+    capabilities:
+      metrics_reading: 1.0
+      latency_stats: 0.9
+      cache_hit_ratio: 0.8
+      metric_tracking: 0.7
+    requires_capabilities:
+      distribution: 0.5
+
+  # ---------------------------------------------------------------------------
+  # ResourceManager - Distributed resource and asset management
+  # ---------------------------------------------------------------------------
+  ResourceManager:
+    class: gCore\Modules\Managers\Base\ResourceManager\ResourceManager
+    category: feature
+    priority: 23
+    deployment: distributed
+    dependencies:
+      - ErrorManager
+      - CacheManager
+    description: Distributed resource and asset management
+    state_vector: [resources, assets]
+    capabilities:
+      resources: 1.0
+      assets: 1.0
+      distributed: 0.9
+    requires_capabilities:
+      logging: 0.8
+      distribution: 0.9
+      persistence: 0.9
+      state: 0.8
+
+# =============================================================================
+# PREMIUM EXTENSIONS (priority 100+)
+# External Composer packages - $99 lifetime license
+# Installation: ExtensionResolver::register(...) from an autoload.files entry
+# =============================================================================
+
+  # ---------------------------------------------------------------------------
+  # TranslateManager - Multilingual content management
+  # ---------------------------------------------------------------------------
+  TranslateManager:
+    class: gCore\Modules\Managers\Stubs\TranslateManagerStub
+    category: extension
+    priority: 100
+    dependencies:
+      - CacheManager
+    description: Multilingual content management and translation
+    state_vector: [translation, localization, multilingual]
+    capabilities:
+      manual_translations: 1.0       # Always available
+      string_registry: 1.0           # Always available
+      language_detection: 1.0        # Always available
+      auto_translation: 0.0          # Requires: InferenceManager
+      batch_translation: 0.0         # Requires: InferenceManager
+      pre_rendered_bundles: 0.0      # Requires: gNode
+      distributed_cache: 0.0         # Requires: gNode
+    capability_requirements:
+      auto_translation: inference
+      batch_translation: inference
+      pre_rendered_bundles: gnode
+      distributed_cache: gnode
+
+  # ---------------------------------------------------------------------------
+  # InferenceManager - AI/LLM operations (resolved via ExtensionResolver)
+  # ---------------------------------------------------------------------------
+  InferenceManager:
+    class: gCore\Modules\Managers\Stubs\InferenceManagerStub
+    category: extension
+    priority: 101
+    dependencies:
+      - CacheManager
+      - ErrorManager
+    description: AI/LLM operations - stub by default; full implementation via external extension package
+    state_vector: [inference, embeddings, llm]
+    capabilities:
+      single_inference: 1.0          # Always available (Ollama HTTP)
+      chat_completion: 1.0           # Always available
+      batch_inference: 0.0           # Requires: gNode
+      embeddings_batch: 0.0          # Requires: gNode
+      model_management: 0.0          # Requires: gNode
+      rag_pipeline: 0.0              # Requires: gNode
+    capability_requirements:
+      batch_inference: gnode
+      embeddings_batch: gnode
+      model_management: gnode
+      rag_pipeline: gnode
+
+  # ---------------------------------------------------------------------------
+  # AnalyticsManager - Visitor analytics (resolved via ExtensionResolver)
+  # ---------------------------------------------------------------------------
+  AnalyticsManager:
+    class: gCore\Modules\Managers\Stubs\AnalyticsManagerStub
+    category: extension
+    priority: 102
+    deployment: distributed
+    dependencies:
+      - CacheManager
+      - SecurityManager
+    description: Visitor analytics and journey tracking - stub by default; full implementation via external extension package
+    state_vector: [analytics, tracking, privacy]
+    capabilities:
+      page_views: 1.0                # Always available (transients)
+      basic_metrics: 1.0             # Always available
+      gdpr_compliance: 1.0           # Always available
+      visitor_journeys: 0.0          # Requires: gNode
+      stream_analytics: 0.0          # Requires: gNode
+      cohort_analysis: 0.0           # Requires: gNode
+      real_time_dashboard: 0.0       # Requires: gNode
+    capability_requirements:
+      visitor_journeys: gnode
+      stream_analytics: gnode
+      cohort_analysis: gnode
+      real_time_dashboard: gnode
+
+  # ---------------------------------------------------------------------------
+  # CommsManager - Notifications and messaging (resolved via ExtensionResolver)
+  # ---------------------------------------------------------------------------
+  CommsManager:
+    class: gCore\Modules\Managers\Stubs\CommsManagerStub
+    category: extension
+    priority: 104
+    dependencies:
+      - CacheManager
+      - ErrorManager
+    description: Notification daemon integration - stub by default; full implementation via external extension package
+    state_vector: [notifications, messaging]
+    capabilities:
+      email: 0.0                     # Requires: SMTP config or postfix
+      push_notifications: 0.0        # Requires: Geodineum-COMMS daemon
+      in_app: 0.0                    # Requires: Geodineum-COMMS daemon
+      webhooks: 0.0                  # Requires: Geodineum-COMMS daemon
+    capability_requirements:
+      push_notifications: gnode
+      in_app: gnode
+      webhooks: gnode
+
+  # ---------------------------------------------------------------------------
+  # EcommerceManager - Ecommerce integration (resolved via ExtensionResolver)
+  # ---------------------------------------------------------------------------
+  EcommerceManager:
+    class: gCore\Modules\Managers\Stubs\EcommerceManagerStub
+    category: extension
+    priority: 110
+    deployment: distributed
+    dependencies:
+      - CacheManager
+      - SecurityManager
+      - StateManager
+    description: Ecommerce integration layer with adapter auto-detection - stub by default; full implementation via external extension package
+    state_vector: [ecommerce, cart, catalog, checkout]
+    capabilities:
+      cart_operations: 1.0             # Always available (adapter pass-through)
+      product_queries: 1.0             # Always available (adapter pass-through)
+      page_context: 1.0                # Always available (adapter pass-through)
+      order_queries: 1.0               # Always available (adapter pass-through)
+      product_cache: 0.0               # Requires: extension (ValKey-backed)
+      checkout_security: 0.0           # Requires: extension (SecurityManager integration)
+      ecommerce_analytics: 0.0         # Requires: extension + gNode
+      inventory_sync: 0.0              # Requires: extension (ValKey-backed)
+      multi_tenant_catalog: 0.0        # Requires: extension + gNode
+    capability_requirements:
+      ecommerce_analytics: gnode
+      multi_tenant_catalog: gnode
+
+  # ---------------------------------------------------------------------------
+  # AssetManager - Asset pipeline. REAL first-party Base manager (804 LOC); the
+  # former AssetManagerStub was removed and register.php moved it to
+  # $baseManagers. `category: extension` here is an INIT-ORDER tier (priority
+  # 100+ band), NOT a stub/Pro marker.
+  # ---------------------------------------------------------------------------
+  AssetManager:
+    class: gCore\Modules\Managers\Base\AssetManager\AssetManager
+    category: extension
+    priority: 115
+    dependencies:
+      - CacheManager
+    description: Asset pipeline (bundling, fingerprinting, CDN integration) - first-party Base manager
+    state_vector: [assets, bundling]
+    capabilities:
+      asset_lookup: 1.0              # Always available (real Base implementation (former stub retired))
+      bundling: 0.0                  # Requires: extension
+      fingerprinting: 0.0            # Requires: extension
+      cdn_integration: 0.0           # Requires: extension
+      cache_invalidation: 0.0        # Requires: extension
+
+# =============================================================================
+# LEGACY / NOT IMPLEMENTED
+# Keeping for reference - these were designed but never built
+# =============================================================================
+# StateManager:
+#   class: gCore\Microservices\Managers\StateManager
+#   category: microservice
+#   type: microservice
+#   implementation: julia
+#   status: NOT_IMPLEMENTED
+#   description: Distributed state management (Julia-based)
+
+# =============================================================================
+# TOPOLOGY SETTINGS
+# =============================================================================
+topology:
+  manifold_dimensions: 12
+  hash_grid_size: 10
+  capability_dimensions: 23  # From geometric_topology.yaml (19 discovery + 4 storage-only)
+
+# =============================================================================
+# gNode PREMIUM BUNDLE REFERENCE
+# =============================================================================
+# Managers requiring gNode (marked with gnode_required: true):
+#   - TopologyManager
+#   - FormatManager
+#
+# Bundle includes:
+#   - gNode Daemon (/opt/geodineum/gNode)
+#   - gNode-Client (composer: geodineum/gnode-client)
+#   - Rust FFI libs (libgeometric_topology.so)
+# =============================================================================

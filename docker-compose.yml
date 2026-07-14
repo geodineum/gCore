@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  gcore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # HTTP server
+      - "8080:8080"  # API server for applications
+      - "6380:6379"  # Redis/ValKey
+    volumes:
+      - ./config:/var/www/gcore/config
+      - ./examples:/var/www/gcore/examples
+      - ./Source:/var/www/gcore/Source  # Mount Source directory for custom applications
+    environment:
+      - APP_ENV=development
+      - SITE_ID=default
+      - NODE_ID=docker
+      - VALKEY_HOST=localhost
+      - VALKEY_PORT=6379
+      - GCORE_DEBUG=true
+      - GCORE_LOG_LEVEL=debug
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "php", "-r", "if(!fsockopen('localhost', 6379)) { exit(1); }"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: >
+      sh -c "supervisord -c /etc/supervisor/conf.d/supervisord.conf &&
+             if [ -f /var/www/gcore/Source/MyApp.php ]; then
+               php /var/www/gcore/Source/MyApp.php
+             else
+               php -S 0.0.0.0:8000 -t /var/www/gcore
+             fi"
+
+  valkey:
+    image: valkey/valkey:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey-data:/data
+    command: valkey-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  valkey-data:

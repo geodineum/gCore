@@ -1,0 +1,43 @@
+contract:
+  name: site_config
+  component: gcore
+  version: "1.0.0"
+  stability: stable
+  stream: "{site_id}:gnode:unified:{env}"
+  consumer_group: gnode-daemon
+  purpose: >
+    Site configuration commands sent by gCore to gNode daemon. Used for
+    reading and updating site configuration stored in ValKey.
+
+  fields:
+    - name: id
+      type: string
+      required: true
+      description: "Unique request ID"
+      example: "gcore-cfg-1713189600123"
+
+    - name: command
+      type: string
+      required: true
+      description: "Config command"
+      example: "GNODE_CONFIG_GET"
+      values: "GNODE_CONFIG_GET|GNODE_CONFIG_SET|GNODE_CONFIG_LIST"
+
+    - name: parameters
+      type: json
+      required: true
+      description: "Config parameters: key, value, section"
+      example: '{"key":"environment.active","site_id":"example_com"}'
+
+    - name: site_id
+      type: string
+      required: true
+      description: "Site identifier"
+      example: "example_com"
+
+  xadd_example: >
+    XADD {site_id}:gnode:unified:production *
+    id gcore-cfg-001
+    command GNODE_CONFIG_GET
+    parameters '{"key":"environment.active","site_id":"example_com"}'
+    site_id example_com

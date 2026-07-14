@@ -1,0 +1,21 @@
+three.js vendored bundle
+========================
+
+Version : r128
+Source  : https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
+Pinned  : 2026-04-29 (dashboard MVP)
+SHA-256 : (computed via `sha256sum three.min.js`)
+Size    : ~600 KB minified
+
+Why pinned to r128
+------------------
+Matches the version the legacy CDN-loaded topology visualizer was
+already using (gcore-mu/wp-hooks.php pre-vendoring referenced
+cdnjs r128). API drift to newer revisions (r150+ removed
+WebGLRenderer.gammaInput etc.) would break the existing
+THREE.SphereGeometry / MeshPhongMaterial / WebGLRenderer code.
+
+Upgrade path
+------------
+Bumping to r160+ requires switching to the modular ESM build and
+adapting the Topology 3D renderer. Out of scope for now; revisit post-launch.

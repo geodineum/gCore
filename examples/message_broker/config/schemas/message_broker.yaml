@@ -1,0 +1,132 @@
+# gCore Message Broker Schema Validation
+
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+required:
+  - core
+  - site_id
+  - node_id
+  - storage
+  - message_broker
+properties:
+  core:
+    type: object
+    required:
+      - environment
+    properties:
+      environment:
+        type: string
+        enum: [development, staging, production]
+      debug:
+        type: boolean
+        default: false
+  
+  site_id:
+    type: string
+    minLength: 1
+  
+  node_id:
+    type: string
+    minLength: 1
+  
+  storage:
+    type: object
+    required:
+      - host
+      - port
+    properties:
+      host:
+        type: string
+      port:
+        type: integer
+        minimum: 1
+        maximum: 65535
+      auth:
+        type: [string, "null"]
+      tls:
+        type: boolean
+      prefix:
+        type: string
+  
+  message_broker:
+    type: object
+    properties:
+      queue_prefix:
+        type: string
+        default: mb:queue:
+      max_queue_size:
+        type: integer
+        minimum: 1
+        default: 10000
+      message_ttl:
+        type: integer
+        minimum: 1
+        default: 86400
+  
+  api:
+    type: object
+    properties:
+      port:
+        type: integer
+        minimum: 1
+        maximum: 65535
+        default: 8080
+      cors:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          origins:
+            type: array
+            items:
+              type: string
+      timeout:
+        type: integer
+        minimum: 1
+        default: 30
+      rate_limit:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          requests_per_minute:
+            type: integer
+            minimum: 1
+            default: 60
+  
+  security:
+    type: object
+    properties:
+      roles:
+        type: object
+        additionalProperties:
+          type: object
+          properties:
+            permissions:
+              type: array
+              items:
+                type: string
+  
+  error:
+    type: object
+    properties:
+      log_level:
+        type: string
+        enum: [debug, info, warning, error, critical]
+        default: info
+      log_to_file:
+        type: boolean
+        default: true
+      log_file:
+        type: string
+      notify_on:
+        type: array
+        items:
+          type: string
+          enum: [debug, info, warning, error, critical]
+      max_log_size:
+        type: integer
+        minimum: 1
+        default: 10485760

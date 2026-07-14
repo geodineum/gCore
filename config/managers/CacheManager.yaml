@@ -1,0 +1,103 @@
+# =============================================================================
+# CacheManager - Unified Configuration
+# =============================================================================
+# CONSOLIDATED: managers/CacheManager.yaml + cache_manager.yaml
+# Version: 2.0.0 (Unified)
+#
+# This file is the SINGLE SOURCE OF TRUTH for CacheManager configuration.
+# Merges base manager config with gNode integration settings.
+# =============================================================================
+
+enabled: true
+implementation: standalone
+
+adapters:
+  strategy:
+    standalone: gCore\Modules\Core\Adapters\Storage\ValKeyStorage
+
+# =============================================================================
+# CORE CONFIGURATION
+# =============================================================================
+config:
+  debug: false
+  prefix: gcore_
+  default_ttl: 3600
+  max_key_length: 250
+  max_value_size: 1048576  # 1MB
+
+  connection:
+    host: "${VALKEY_HOST:-127.0.0.1}"
+    port: "${VALKEY_PORT:-47445}"
+    timeout: 0.5
+    retry_interval: 100
+    prefix: gcore_
+    auth: "${VALKEY_AUTH:-}"
+    database: 0
+    persistent: true
+    read_timeout: -1
+
+  serialization:
+    serializer: igbinary
+    compression: true
+    compression_threshold: 1024
+    compression_level: 1
+
+  scripts:
+    retry_attempts: 3
+    retry_delay: 100
+
+  distributed:
+    transaction_timeout: 30
+    lock_timeout: 30
+    lock_retry_count: 3
+    lock_retry_delay: 100
+
+# =============================================================================
+# gNode INTEGRATION
+# =============================================================================
+gnode:
+  enabled: true
+  namespacing: true  # Use {site_id}:cache:{key} format
+  legacy_fallback: true  # Fallback if gNode fails
+
+  performance:
+    batch_threshold: 10  # Batch when key count >= threshold
+    timeout_ms: 1000
+    connection_pool_size: 16
+
+  content_minification:
+    enabled: true
+    html: true
+    css: true
+    js: true
+    size_threshold: 1024
+
+  compression:
+    enabled: true
+    threshold: 1024
+    level: 6
+
+# =============================================================================
+# METRICS AND MONITORING
+# =============================================================================
+metrics:
+  track_performance: true
+  log_slow_operations: true
+  slow_threshold_ms: 100
+  report_metrics_interval: 300
+
+# =============================================================================
+# DEVELOPMENT AND DEBUGGING
+# =============================================================================
+development:
+  log_key_access: false
+  validate_serialization: false
+
+# =============================================================================
+# LEGACY MODE (when gnode.enabled: false)
+# =============================================================================
+legacy:
+  scripts_enabled: true
+  script_cache: true
+  pipeline_enabled: true
+

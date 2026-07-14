@@ -1,0 +1,283 @@
+---
+# Schema for multisite.yaml configuration
+type: object
+required:
+  - enabled
+  - discovery_mode
+  - network_topology
+properties:
+  enabled:
+    type: boolean
+    description: "Enable multi-site support"
+    
+  discovery_mode:
+    type: string
+    enum: [manual, auto, hybrid]
+    description: "Site discovery mode"
+    
+  fallback_to_local:
+    type: boolean
+    default: true
+    description: "Fallback to local services if network is unavailable"
+    
+  local_site:
+    type: object
+    properties:
+      site_id:
+        type: string
+        minLength: 1
+        description: "Site identifier"
+        
+      network_role:
+        type: string
+        enum: [settlement, outpost, city, capital, sovereign]
+        description: "Site role in the network"
+        
+      display_name:
+        type: string
+        description: "Human-readable site name"
+        
+      capabilities:
+        type: object
+        patternProperties:
+          "^[a-zA-Z0-9_]+$":
+            type: number
+            minimum: 0
+            maximum: 1
+        description: "Site capabilities in capability manifold"
+        
+      coordinates:
+        type: array
+        items:
+          type: number
+        minItems: 2
+        maxItems: 3
+        description: "Site coordinates in network space (2D or 3D)"
+        
+      timeout:
+        type: integer
+        minimum: 1
+        maximum: 3600
+        default: 30
+        description: "Site operation timeout in seconds"
+    required: [site_id, network_role]
+    description: "Local site configuration"
+    
+  discovery_hosts:
+    type: array
+    items:
+      type: object
+      properties:
+        host:
+          type: string
+          description: "Host address"
+          
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: "Host port"
+          
+        ssl:
+          type: boolean
+          description: "Use SSL/TLS for connection"
+          
+        auth:
+          type: string
+          description: "Authentication credentials (if required)"
+          
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+          description: "Host priority (lower number = higher priority)"
+          
+        role:
+          type: string
+          enum: [settlement, outpost, city, capital, sovereign]
+          description: "Host role in the network"
+      required: [host]
+    description: "Hosts to use for site discovery"
+    
+  network_topology:
+    type: object
+    properties:
+      structure:
+        type: string
+        enum: [mesh, star, hierarchical, hybrid]
+        default: hierarchical
+        description: "Network topology structure"
+        
+      propagation_mode:
+        type: string
+        enum: [broadcast, targeted, hybrid]
+        default: hybrid
+        description: "Message propagation mode"
+        
+      sync_interval:
+        type: integer
+        minimum: 1
+        maximum: 86400
+        default: 300
+        description: "Synchronization interval in seconds"
+        
+      max_hops:
+        type: integer
+        minimum: 1
+        maximum: 10
+        default: 3
+        description: "Maximum number of hops for message propagation"
+        
+      connection_timeout:
+        type: integer
+        minimum: 1
+        maximum: 300
+        default: 5
+        description: "Connection timeout in seconds"
+        
+      retry_interval:
+        type: integer
+        minimum: 1
+        maximum: 3600
+        default: 60
+        description: "Retry interval in seconds"
+        
+      max_retries:
+        type: integer
+        minimum: 0
+        maximum: 10
+        default: 3
+        description: "Maximum number of retries"
+    required: [structure, propagation_mode]
+    description: "Network topology configuration"
+    
+  boundaries:
+    type: object
+    properties:
+      isolation_level:
+        type: string
+        enum: [none, partial, strict]
+        default: partial
+        description: "Tenant isolation level"
+        
+      shared_services:
+        type: array
+        items:
+          type: string
+        description: "Services that are shared across sites"
+        
+      private_services:
+        type: array
+        items:
+          type: string
+        description: "Services that are strictly private to each site"
+        
+      capability_boundaries:
+        type: object
+        patternProperties:
+          "^[a-zA-Z0-9_]+$":
+            type: object
+            properties:
+              min:
+                type: number
+                minimum: 0
+                maximum: 1
+                description: "Minimum capability value for this boundary"
+                
+              max:
+                type: number
+                minimum: 0
+                maximum: 1
+                description: "Maximum capability value for this boundary"
+                
+              isolation:
+                type: string
+                enum: [none, read, write, full]
+                description: "Isolation level for this capability boundary"
+            required: [min, max, isolation]
+        description: "Capability-specific boundary definitions"
+        
+      cross_site_auth:
+        type: boolean
+        default: false
+        description: "Allow cross-site authentication"
+    description: "Multi-site boundary configuration"
+    
+  metrics:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: "Enable network metrics collection"
+        
+      collection_interval:
+        type: integer
+        minimum: 1
+        maximum: 3600
+        default: 60
+        description: "Metrics collection interval in seconds"
+        
+      aggregation_level:
+        type: string
+        enum: [none, basic, detailed]
+        default: basic
+        description: "Metrics aggregation level"
+        
+      retention_period:
+        type: integer
+        minimum: 3600
+        maximum: 31536000
+        default: 604800
+        description: "Metrics retention period in seconds"
+        
+      storage:
+        type: string
+        enum: [valkey, local, prometheus]
+        default: valkey
+        description: "Metrics storage backend"
+    description: "Network metrics configuration"
+    
+  auto_discovery:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: "Enable automatic site discovery"
+        
+      protocol:
+        type: string
+        enum: [http, https, redis, broadcast]
+        default: https
+        description: "Discovery protocol"
+        
+      broadcast_interval:
+        type: integer
+        minimum: 60
+        maximum: 86400
+        default: 3600
+        description: "Broadcast interval in seconds"
+        
+      listen_port:
+        type: integer
+        minimum: 1024
+        maximum: 65535
+        description: "Port to listen on for discovery broadcasts"
+        
+      broadcast_port:
+        type: integer
+        minimum: 1024
+        maximum: 65535
+        description: "Port to broadcast discovery messages to"
+        
+      signature_key:
+        type: string
+        description: "Key used to sign discovery messages"
+        
+      verification_required:
+        type: boolean
+        default: true
+        description: "Require signature verification for discovery messages"
+    description: "Automatic site discovery configuration"

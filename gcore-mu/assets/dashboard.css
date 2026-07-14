@@ -1,0 +1,690 @@
+/*
+ * Geodineum Dashboard (gDash) admin styles
+ *
+ * Conventions match the existing gcore-mu/wp-hooks.php inline styling
+ * so the dashboard pages and the Status / Diagnostics / Topology pages
+ * feel like one product. CSS lives in gcore-mu/assets/ so the MU plugin
+ * URL constant (GCORE_MU_URL) can serve it; PHP business logic lives in
+ * Modules/Dashboard/.
+ */
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Layout                                                                */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash {
+    --gdash-border: #c3c4c7;
+    --gdash-border-soft: #e5e7e9;
+    --gdash-bg-soft: #f6f7f7;
+    --gdash-text-muted: #646970;
+    --gdash-accent: #2271b1;
+    --gdash-ok: #00a32a;
+    --gdash-warn: #dba617;
+    --gdash-bad: #d63638;
+}
+
+.gdash h1 {
+    margin-bottom: 4px;
+}
+.gdash p.description {
+    margin-top: 0;
+    margin-bottom: 1.5em;
+    max-width: 70ch;
+    color: var(--gdash-text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Card grid (Sites view, Status page extension cards)                   */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.gdash-card {
+    background: #fff;
+    border: 1px solid var(--gdash-border);
+    border-radius: 4px;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.gdash-card:hover {
+    border-color: var(--gdash-accent);
+    transform: translateY(-1px);
+}
+.gdash-card-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--gdash-border-soft);
+}
+.gdash-card-title code {
+    background: transparent;
+    padding: 0;
+}
+.gdash-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    font-size: 13px;
+}
+.gdash-card-row span {
+    color: var(--gdash-text-muted);
+}
+.gdash-card-row strong {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Filter bar (pattern input on Streams & Keys, unit picker on Logs)     */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash-filter {
+    background: var(--gdash-bg-soft);
+    border: 1px solid var(--gdash-border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 0 0 1.5em 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.gdash-filter label {
+    font-weight: 600;
+    color: var(--gdash-text-muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+.gdash-filter input[type="text"],
+.gdash-filter select {
+    padding: 6px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--gdash-border);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Key index (Streams & Keys grouping)                                  */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash-key-list {
+    list-style: none;
+    margin: 0 0 1.5em 0;
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid var(--gdash-border-soft);
+    border-radius: 3px;
+    columns: 2 320px;
+    column-gap: 24px;
+}
+.gdash-key-list li {
+    padding: 2px 0;
+    break-inside: avoid;
+}
+.gdash-key-list a {
+    text-decoration: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Journal viewer (Service Logs)                                        */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash-journal {
+    background: #1a1a1a;
+    color: #d4d4d4;
+    padding: 16px;
+    border-radius: 4px;
+    max-height: 70vh;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Badges (ACL Inspector status pills)                                  */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.gdash-badge-ok   { background: #d1f1d8; color: var(--gdash-ok); }
+.gdash-badge-warn { background: #fef0c8; color: var(--gdash-warn); }
+.gdash-badge-bad  { background: #fce0e0; color: var(--gdash-bad); }
+
+/* ──────────────────────────────────────────────────────────────────── */
+/* Status-page extension cards (sites count / cache hit-rate / activity) */
+/* ──────────────────────────────────────────────────────────────────── */
+
+.gdash-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+.gdash-stat {
+    background: #fff;
+    border: 1px solid var(--gdash-border-soft);
+    border-radius: 4px;
+    padding: 14px 16px;
+}
+.gdash-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gdash-text-muted);
+    margin-bottom: 6px;
+}
+.gdash-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.gdash-stat-sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--gdash-text-muted);
+}
+
+.gdash-activity {
+    background: var(--gdash-bg-soft);
+    border: 1px solid var(--gdash-border-soft);
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    max-height: 240px;
+    overflow: auto;
+}
+.gdash-activity > div {
+    padding: 3px 0;
+    border-bottom: 1px dashed var(--gdash-border-soft);
+}
+.gdash-activity > div:last-child {
+    border-bottom: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════ */
+/* Geodineum brand surface — the launch operator dashboard               */
+/*                                                                       */
+/* Scoped under .geo-admin so the gold/dark theme applies ONLY to the    */
+/* Geodineum page content, never the surrounding wp-admin chrome or the  */
+/* light .gdash-* operator-console pages above. Palette matches the      */
+/* approved ganalyze findings look (findings.css :root gold tokens).     */
+/* ════════════════════════════════════════════════════════════════════ */
+
+/* Tokens live on the body class so EVERY Geodineum admin page shares the
+   palette, not just the dashboard. The geodineum-admin body class is added by
+   admin_body_class() in wp-hooks.php for any gcore_* / geodineum_* screen. */
+body.geodineum-admin {
+    --geo-gold:        #f4d27e;
+    --geo-gold-light:  #ffe9b4;
+    --geo-gold-soft:   #d4b66e;
+    --geo-bg:          #0b0a07;
+    --geo-bg-panel:    #15120c;
+    --geo-bg-card:     #1a1610;
+    --geo-border:      rgba(244, 210, 126, 0.22);
+    --geo-border-mid:  rgba(244, 210, 126, 0.38);
+    --geo-read:        #fbe6a6;
+    --geo-read-dim:    #cdbd92;
+    --geo-ok:          #6fcf97;
+    --geo-bad:         #e07a7a;
+}
+
+/* Dark canvas behind every Geodineum page's content area (WP chrome — the left
+   menu and top bar — stays default). */
+body.geodineum-admin #wpbody-content {
+    background: var(--geo-bg);
+    min-height: calc(100vh - 32px);
+}
+body.geodineum-admin .wrap { color: var(--geo-read); }
+
+/* Dashboard wrapper — a slightly-lighter inset card on the canvas; the hero +
+   status cards carry their own surfaces. */
+.geo-admin {
+    background: var(--geo-bg-panel);
+    border: 1px solid var(--geo-border);
+    border-radius: 10px;
+    padding: 0 0 34px;
+    margin: 16px 20px 16px 0;
+    overflow: hidden;
+    box-shadow: 0 1px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Hero topbar */
+.geo-admin .geo-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 21px;
+    padding: 26px 34px;
+    border-bottom: 1px solid var(--geo-border);
+    background: linear-gradient(180deg, rgba(244, 210, 126, 0.05), transparent);
+    flex-wrap: wrap;
+}
+.geo-admin .geo-hero-titles { display: flex; flex-direction: column; line-height: 1.25; }
+.geo-admin .geo-hero-title {
+    color: var(--geo-gold-light);
+    font-size: 1.55rem;
+    font-weight: 300;
+    margin: 0;
+    letter-spacing: 0.09em;
+}
+.geo-admin .geo-hero-sub {
+    color: var(--geo-gold-soft);
+    font-size: 0.72rem;
+    font-weight: 400;
+    margin: 4px 0 0;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+.geo-admin .geo-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--geo-border-mid);
+    background: rgba(244, 210, 126, 0.05);
+}
+.geo-admin .geo-hero-pill.connected    { color: var(--geo-gold-light); }
+.geo-admin .geo-hero-pill.disconnected { color: var(--geo-bad); border-color: rgba(224, 122, 122, 0.4); }
+.geo-admin .geo-hero-pill .dashicons { font-size: 16px; width: 16px; height: 16px; }
+
+/* Card grid */
+.geo-admin .gcore-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 21px;
+    padding: 26px 34px 0;
+    margin: 0;
+}
+.geo-admin .gcore-card {
+    background: var(--geo-bg-card);
+    border: 1px solid var(--geo-border);
+    border-radius: 8px;
+    padding: 21px;
+}
+.geo-admin .gcore-card h2 {
+    margin: 0 0 13px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--geo-border);
+    color: var(--geo-gold-light);
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+/* Status indicator */
+.geo-admin .gcore-status-indicator {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 6px; font-weight: 400;
+    border: 1px solid var(--geo-border-mid);
+}
+.geo-admin .gcore-status-indicator.connected    { background: rgba(111, 207, 151, 0.08); color: var(--geo-ok); }
+.geo-admin .gcore-status-indicator.disconnected { background: rgba(224, 122, 122, 0.08); color: var(--geo-bad); }
+.geo-admin .gcore-status-indicator .dashicons { font-size: 18px; width: 18px; height: 18px; }
+
+/* Tables */
+.geo-admin .gcore-table { width: 100%; border-collapse: collapse; }
+.geo-admin .gcore-table th {
+    text-align: left; padding: 8px 0; width: 42%;
+    color: var(--geo-gold-soft); font-weight: 400;
+    font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.geo-admin .gcore-table td { padding: 8px 0; color: var(--geo-read); }
+.geo-admin code,
+.geo-admin .gcore-table code {
+    background: rgba(244, 210, 126, 0.08);
+    color: var(--geo-gold-light);
+    padding: 2px 6px; border-radius: 3px;
+    font-size: 0.84em;
+}
+
+/* Service tier lists */
+.geo-admin .gcore-services-list { margin: 0; padding: 0; list-style: none; }
+.geo-admin .gcore-services-list li {
+    padding: 6px 0; border-bottom: 1px solid var(--geo-border);
+    color: var(--geo-read-dim); font-size: 0.9rem;
+}
+.geo-admin .gcore-services-list li:last-child { border-bottom: none; }
+.geo-admin .gcore-services-list li span { color: var(--geo-gold-soft); }
+.geo-admin .gcore-tier-section { margin-bottom: 15px; }
+.geo-admin .gcore-tier-section:last-child { margin-bottom: 0; }
+.geo-admin .gcore-tier-label {
+    font-weight: 600; font-size: 0.66rem; text-transform: uppercase;
+    letter-spacing: 0.12em; margin-bottom: 6px; color: var(--geo-gold-soft);
+}
+.geo-admin .gcore-tier-label.infra   { color: #c79be0; }
+.geo-admin .gcore-tier-label.service { color: #7fc8d8; }
+.geo-admin .gcore-tier-label.tool    { color: var(--geo-ok); }
+.geo-admin .gcore-tier-label.site    { color: var(--geo-gold); }
+.geo-admin .gcore-tier-label.svc     { color: #7fc8d8; }
+.geo-admin .geo-dim   { color: var(--geo-read-dim); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.geo-admin .geo-count { font-size: 12px; color: var(--geo-gold-soft); font-weight: 400; }
+.geo-admin .geo-bad-text { color: var(--geo-bad); }
+.geo-admin .last-check { font-size: 11px; color: var(--geo-gold-soft); margin-top: 8px; }
+.geo-admin .description { color: var(--geo-read-dim); }
+
+/* Snapshot stat cards (operator-console section, when present) */
+.geo-admin .geo-section-head {
+    margin: 30px 34px 0;
+    color: var(--geo-gold-light);
+    font-size: 0.82rem; font-weight: 400;
+    letter-spacing: 0.16em; text-transform: uppercase;
+}
+.geo-admin .gdash-stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 13px; padding: 0 34px; margin-top: 13px;
+}
+.geo-admin .gdash-stat {
+    background: var(--geo-bg-card);
+    border: 1px solid var(--geo-border);
+    border-radius: 8px; padding: 16px 18px;
+}
+.geo-admin .gdash-stat-label {
+    color: var(--geo-gold-soft); font-size: 0.66rem;
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;
+}
+.geo-admin .gdash-stat-value {
+    color: var(--geo-gold-light); font-size: 30px; font-weight: 300;
+    line-height: 1; font-variant-numeric: tabular-nums;
+}
+.geo-admin .gdash-stat-sub { color: var(--geo-read-dim); margin-top: 8px; font-size: 12px; }
+
+/* Action buttons row */
+.geo-admin .geo-actions { padding: 0 34px; margin-top: 21px; }
+.geo-admin .geo-actions .button {
+    background: rgba(244, 210, 126, 0.06);
+    border: 1px solid var(--geo-border-mid);
+    color: var(--geo-gold-light);
+    border-radius: 6px;
+    box-shadow: none;
+    text-shadow: none;
+    margin: 0 8px 8px 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.geo-admin .geo-actions .button:hover {
+    background: rgba(244, 210, 126, 0.13);
+    border-color: var(--geo-gold-soft);
+    color: var(--geo-gold-light);
+}
+
+/* ════════════════════════════════════════════════════════════════════ */
+/* Page-wide theming — applies to every Geodineum admin page (Topology,   */
+/* Comms, Diagnostics, …) via the geodineum-admin body class.            */
+/* ════════════════════════════════════════════════════════════════════ */
+
+body.geodineum-admin .wrap > h1,
+body.geodineum-admin .wrap > h2,
+body.geodineum-admin h1.wp-heading-inline {
+    color: var(--geo-gold-light);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+}
+body.geodineum-admin .wrap > p,
+body.geodineum-admin p.description,
+body.geodineum-admin .wrap li,
+body.geodineum-admin label { color: var(--geo-read-dim); }
+body.geodineum-admin a { color: var(--geo-gold); }
+body.geodineum-admin a:hover { color: var(--geo-gold-light); }
+body.geodineum-admin code {
+    background: rgba(244, 210, 126, 0.08);
+    color: var(--geo-gold-light);
+    border-radius: 3px;
+}
+
+/* Buttons */
+body.geodineum-admin .button,
+body.geodineum-admin .button-secondary {
+    background: rgba(244, 210, 126, 0.06);
+    border-color: var(--geo-border-mid);
+    color: var(--geo-gold-light);
+    box-shadow: none;
+    text-shadow: none;
+}
+body.geodineum-admin .button:hover {
+    background: rgba(244, 210, 126, 0.13);
+    border-color: var(--geo-gold-soft);
+    color: var(--geo-gold-light);
+}
+body.geodineum-admin .button-primary {
+    background: var(--geo-gold-soft);
+    border-color: var(--geo-gold);
+    color: #17150f;
+    font-weight: 500;
+}
+body.geodineum-admin .button-primary:hover { background: var(--geo-gold); color: #120f09; }
+
+/* Tables + form fields */
+body.geodineum-admin .widefat,
+body.geodineum-admin table.form-table { background: var(--geo-bg-card); }
+body.geodineum-admin .widefat,
+body.geodineum-admin .widefat td,
+body.geodineum-admin .widefat th { border-color: var(--geo-border); }
+body.geodineum-admin .widefat thead th,
+body.geodineum-admin .widefat tfoot th,
+body.geodineum-admin table.form-table th { color: var(--geo-gold-soft); }
+body.geodineum-admin .widefat td { color: var(--geo-read); }
+body.geodineum-admin .widefat tbody tr:hover td { background: rgba(244, 210, 126, 0.04); }
+body.geodineum-admin input[type="text"],
+body.geodineum-admin input[type="url"],
+body.geodineum-admin input[type="email"],
+body.geodineum-admin input[type="number"],
+body.geodineum-admin input[type="password"],
+body.geodineum-admin input[type="search"],
+body.geodineum-admin select,
+body.geodineum-admin textarea {
+    background: rgba(6, 5, 4, 0.6);
+    color: var(--geo-read);
+    border-color: var(--geo-border-mid);
+}
+
+/* Nav tabs (Comms) */
+body.geodineum-admin .nav-tab-wrapper { border-bottom-color: var(--geo-border); }
+body.geodineum-admin .nav-tab {
+    background: rgba(244, 210, 126, 0.04);
+    border-color: var(--geo-border);
+    color: var(--geo-gold-soft);
+}
+body.geodineum-admin .nav-tab-active,
+body.geodineum-admin .nav-tab:hover {
+    background: var(--geo-bg-card);
+    color: var(--geo-gold-light);
+    border-bottom-color: var(--geo-bg-card);
+}
+
+/* Notices keep their semantic accent but sit on a dark card */
+body.geodineum-admin .notice,
+body.geodineum-admin .card {
+    background: var(--geo-bg-card);
+    color: var(--geo-read);
+    border-color: var(--geo-border);
+}
+
+/* Bespoke light cards on the Comms + Topology pages → dark */
+body.geodineum-admin .gcore-comms-card,
+body.geodineum-admin .gcore-comms-channel-card,
+body.geodineum-admin .topology-controls {
+    background: var(--geo-bg-card);
+    border-color: var(--geo-border);
+    color: var(--geo-read);
+}
+body.geodineum-admin .gcore-comms-card h2,
+body.geodineum-admin .topology-controls h3 {
+    color: var(--geo-gold-light);
+    border-bottom-color: var(--geo-border);
+}
+body.geodineum-admin .gcore-comms-stat {
+    background: linear-gradient(135deg, rgba(244, 210, 126, 0.15), rgba(244, 210, 126, 0.04));
+    color: var(--geo-gold-light);
+    border: 1px solid var(--geo-border);
+}
+body.geodineum-admin .dimension-select label,
+body.geodineum-admin .dimension-group-title,
+body.geodineum-admin .service-legend h4 { color: var(--geo-gold-soft); }
+body.geodineum-admin .dimension-select select { background: rgba(6, 5, 4, 0.6); color: var(--geo-read); }
+body.geodineum-admin .topology-canvas-wrap { background: #100e0a; }
+body.geodineum-admin .topology-controls { border-radius: 8px; }
+body.geodineum-admin .legend-item:hover { background: rgba(244, 210, 126, 0.06); margin: 0 -10px; padding: 4px 10px; }
+
+/* Comms page — remaining bespoke light elements (message table, selectors,
+   stat cards, status pills) so the whole page reads as one dark surface. */
+body.geodineum-admin .gcore-comms-site-selector,
+body.geodineum-admin .gcore-comms-site-stat-card {
+    background: var(--geo-bg-card);
+    border-color: var(--geo-border);
+    color: var(--geo-read);
+}
+body.geodineum-admin .gcore-comms-site-stat-card h4 { color: var(--geo-gold-soft); }
+body.geodineum-admin .gcore-comms-messages-table th {
+    background: rgba(244, 210, 126, 0.05);
+    color: var(--geo-gold-soft);
+}
+body.geodineum-admin .gcore-comms-messages-table th,
+body.geodineum-admin .gcore-comms-messages-table td {
+    border-bottom-color: var(--geo-border);
+    color: var(--geo-read);
+}
+body.geodineum-admin .gcore-comms-messages-table tr:hover { background: rgba(244, 210, 126, 0.04); }
+/* Status pills — keep the semantic hue, drop the light background. */
+body.geodineum-admin .gcore-comms-status { background: rgba(244, 210, 126, 0.07); color: var(--geo-gold-light); }
+body.geodineum-admin .gcore-comms-status.active,
+body.geodineum-admin .gcore-comms-status.sent  { background: rgba(111, 207, 151, 0.14); color: var(--geo-ok); }
+body.geodineum-admin .gcore-comms-status.error,
+body.geodineum-admin .gcore-comms-status.failed { background: rgba(224, 122, 122, 0.14); color: var(--geo-bad); }
+body.geodineum-admin .gcore-comms-status.inactive,
+body.geodineum-admin .gcore-comms-status.pending { background: rgba(244, 210, 126, 0.12); color: var(--geo-gold-light); }
+
+/* Topology page — light hairline borders → brand border. */
+body.geodineum-admin .controls-footer,
+body.geodineum-admin .service-legend { border-top-color: var(--geo-border); }
+
+/* ════════════════════════════════════════════════════════════════════ */
+/* Operator-console pages (Sites / Streams & Keys / Service Logs /        */
+/* Templates / Schemas / Diagnostics) — visible only when the console is  */
+/* enabled, but themed so they match if it's flipped on.                  */
+/* ════════════════════════════════════════════════════════════════════ */
+
+/* Redefine the light .gdash palette vars under the brand body class so any
+   var-based .gdash-* rule inherits the dark/gold values. */
+body.geodineum-admin .gdash {
+    --gdash-border: var(--geo-border);
+    --gdash-border-soft: var(--geo-border);
+    --gdash-bg-soft: var(--geo-bg-panel);
+    --gdash-text-muted: var(--geo-gold-soft);
+    --gdash-accent: var(--geo-gold-soft);
+    --gdash-ok: var(--geo-ok);
+    --gdash-warn: var(--geo-gold-light);
+    --gdash-bad: var(--geo-bad);
+}
+/* Hardcoded-colour .gdash-* elements (vars don't reach these). */
+body.geodineum-admin .gdash-card,
+body.geodineum-admin .gdash-stat,
+body.geodineum-admin .gdash-key-list,
+body.geodineum-admin .gdash-filter,
+body.geodineum-admin .gdash-activity {
+    background: var(--geo-bg-card);
+    border-color: var(--geo-border);
+    color: var(--geo-read);
+}
+body.geodineum-admin .gdash-card:hover { border-color: var(--geo-gold-soft); }
+body.geodineum-admin .gdash-card-title { border-bottom-color: var(--geo-border); color: var(--geo-gold-light); }
+body.geodineum-admin .gdash-card-row span,
+body.geodineum-admin .gdash-stat-label,
+body.geodineum-admin .gdash-stat-sub,
+body.geodineum-admin .gdash-filter label { color: var(--geo-gold-soft); }
+body.geodineum-admin .gdash-stat-value { color: var(--geo-gold-light); }
+body.geodineum-admin .gdash-activity > div { border-bottom-color: var(--geo-border); }
+body.geodineum-admin .gdash-journal { background: #0d0c09; color: var(--geo-read); }
+body.geodineum-admin .gdash-key-list a { color: var(--geo-gold); }
+body.geodineum-admin .gdash-badge-ok   { background: rgba(111, 207, 151, 0.14); color: var(--geo-ok); }
+body.geodineum-admin .gdash-badge-warn { background: rgba(244, 210, 126, 0.14); color: var(--geo-gold-light); }
+body.geodineum-admin .gdash-badge-bad  { background: rgba(224, 122, 122, 0.14); color: var(--geo-bad); }
+
+/* Templates page (TemplateAdmin .gcore-template-* set). */
+body.geodineum-admin .gcore-template-card,
+body.geodineum-admin .gcore-template-editor,
+body.geodineum-admin .gcore-template-preview {
+    background: var(--geo-bg-card);
+    border-color: var(--geo-border);
+    color: var(--geo-read);
+}
+body.geodineum-admin .gcore-template-card h2 { color: var(--geo-gold-light); border-bottom-color: var(--geo-border); }
+body.geodineum-admin .gcore-template-stat {
+    background: linear-gradient(135deg, rgba(244, 210, 126, 0.15), rgba(244, 210, 126, 0.04));
+    color: var(--geo-gold-light);
+    border: 1px solid var(--geo-border);
+}
+body.geodineum-admin .gcore-template-table th { background: rgba(244, 210, 126, 0.05); color: var(--geo-gold-soft); }
+body.geodineum-admin .gcore-template-table th,
+body.geodineum-admin .gcore-template-table td { border-bottom-color: var(--geo-border); }
+body.geodineum-admin .gcore-template-table tr:hover { background: rgba(244, 210, 126, 0.04); }
+body.geodineum-admin .gcore-template-meta label { color: var(--geo-gold-soft); }
+body.geodineum-admin .gcore-template-stub-notice {
+    background: rgba(244, 210, 126, 0.10);
+    border-color: var(--geo-gold-soft);
+    color: var(--geo-gold-light);
+}
+body.geodineum-admin .gcore-template-badge.form    { background: rgba(111, 207, 151, 0.14); color: var(--geo-ok); }
+body.geodineum-admin .gcore-template-badge.content { background: rgba(127, 200, 216, 0.16); color: #7fc8d8; }
+body.geodineum-admin .gcore-template-badge.theme   { background: rgba(244, 210, 126, 0.10); color: var(--geo-read-dim); }
+body.geodineum-admin .gcore-template-badge.stub    { background: rgba(244, 210, 126, 0.12); color: var(--geo-gold-light); }
+
+/* ===================================================================== */
+/* 3D constellation topology (gdash-topology.js)                          */
+/* ===================================================================== */
+.gdash-topo-wrap { max-width: 960px; margin: 0 0 1.5em; }
+.gdash-topo {
+    position: relative;
+    width: 100%;
+    height: 460px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #2a2f45;
+    background: radial-gradient(ellipse at 50% 28%, #16213f 0%, #0a0910 72%);
+    touch-action: none;
+}
+.gdash-topo.gdash-topo-fallback { display: none; }
+.gdash-topo canvas { display: block; }
+.gdash-topo-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.gdash-topo-label {
+    position: absolute; top: 0; left: 0;
+    pointer-events: none; white-space: nowrap; text-align: center;
+    font-size: 12px; line-height: 1.15; color: #e8ecf5;
+    text-shadow: 0 1px 3px rgba(0,0,0,.85); will-change: transform, opacity;
+}
+.gdash-topo-label .l-name { display: block; font-weight: 600; }
+.gdash-topo-label .l-sub  { display: block; font-size: 10px; color: #9aa4bf; }
+.gdash-topo-label.is-core .l-name { color: #f4d27e; }
+.gdash-topo-hint {
+    position: absolute; right: 10px; bottom: 8px;
+    font-size: 11px; color: #8b93ad; pointer-events: none; letter-spacing: .02em;
+}
+.gdash-topo-teaser { margin: 8px 2px 0; font-size: 12px; color: #646970; }
+body.geodineum-admin .gdash-topo-teaser { color: var(--geo-read-dim); }

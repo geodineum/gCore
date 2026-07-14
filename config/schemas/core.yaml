@@ -1,0 +1,108 @@
+---
+# Core Configuration Schema
+type: object
+required:
+  - environment
+  - debug
+  - version
+  - site_id
+  - node_id
+properties:
+  environment:
+    type: string
+    enum: [development, staging, production, wordpress]
+    description: "Application environment"
+  
+  debug:
+    type: boolean
+    description: "Debug mode flag"
+  
+  version:
+    type: string
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+    description: "gCore version in semantic versioning format"
+  
+  site_id:
+    type: string
+    minLength: 1
+    maxLength: 64
+    description: "Site identifier for multi-tenant systems"
+  
+  node_id:
+    type: string
+    minLength: 1
+    maxLength: 64
+    description: "Node identifier for cluster deployments"
+  
+  log_level:
+    type: string
+    enum: [debug, info, notice, warning, error, critical, alert, emergency]
+    default: warning
+    description: "Default logging level"
+  
+  paths:
+    type: object
+    properties:
+      base:
+        type: string
+        description: "Base application path"
+      config:
+        type: string
+        description: "Configuration directory path"
+      logs:
+        type: string
+        description: "Log directory path"
+      temp:
+        type: string
+        description: "Temporary directory path"
+      assets:
+        type: string
+        description: "Assets directory path"
+    required: [base, config]
+    description: "System paths configuration"
+  
+  timeouts:
+    type: object
+    properties:
+      default:
+        type: integer
+        minimum: 1
+        maximum: 300
+        default: 30
+        description: "Default timeout in seconds"
+      connection:
+        type: integer
+        minimum: 1
+        maximum: 60
+        default: 5
+        description: "Connection timeout in seconds"
+      script:
+        type: integer
+        minimum: 1
+        maximum: 3600
+        default: 60
+        description: "Script execution timeout in seconds"
+    description: "System timeouts configuration"
+  
+  retries:
+    type: object
+    properties:
+      max_attempts:
+        type: integer
+        minimum: 1
+        maximum: 10
+        default: 3
+        description: "Maximum retry attempts"
+      delay:
+        type: integer
+        minimum: 100
+        maximum: 60000
+        default: 1000
+        description: "Retry delay in milliseconds"
+      backoff_factor:
+        type: number
+        minimum: 1
+        maximum: 5
+        default: 2
+        description: "Exponential backoff factor"
+    description: "Retry configuration for operations"

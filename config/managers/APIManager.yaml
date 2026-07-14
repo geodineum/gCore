@@ -1,0 +1,592 @@
+# =============================================================================
+# APIManager - Unified Configuration
+# =============================================================================
+# CONSOLIDATED: managers/APIManager.yaml + 8 trait configs
+# Version: 2.0.0 (Unified)
+#
+# This file is the SINGLE SOURCE OF TRUTH for APIManager configuration.
+# All trait configurations are embedded inline under the 'traits' section.
+# =============================================================================
+
+enabled: true
+api_version: "1.0"
+namespace: gcore/v1
+debug: false
+
+# =============================================================================
+# CORE CONFIGURATION
+# =============================================================================
+
+cache:
+  enabled: true
+  ttl: 3600
+  ttls_by_category:
+    content: 3600     # 1 hour
+    meta: 1800        # 30 minutes
+    query: 300        # 5 minutes
+    status: 60        # 1 minute
+    default: 1800     # 30 minutes
+  groups:
+    content: content
+    meta: meta
+    query: query
+    status: status
+    default: api
+
+rate_limiting:
+  enabled: true
+  window: 60
+  max: 60
+  batch_size_limit: 100
+  by_category:
+    content:
+      max: 60
+      window: 60
+    meta:
+      max: 30
+      window: 60
+    query:
+      max: 15
+      window: 60
+    batch:
+      max: 5
+      window: 60
+    default:
+      max: 60
+      window: 60
+  exclusions:
+    ips:
+      - "127.0.0.1"
+      - "::1"
+    roles:
+      - administrator
+    capabilities:
+      - manage_options
+
+connection:
+  pool_size: 5
+  adaptive_backoff: true
+
+features:
+  metrics: true
+  validation: true
+  websocket: false
+  admin_ui: true
+
+# Dynamic endpoints
+endpoints:
+  health:
+    route: /health
+    methods: [GET]
+    permission_callback: __return_true
+    handler:
+      type: callback
+      callback: getHealthStatus
+
+# WebSocket channels (when websocket enabled)
+websocket_channels:
+  notifications:
+    description: System notifications
+    public: false
+  content:
+    description: Content updates
+    public: true
+  metrics:
+    description: System metrics
+    public: false
+
+# =============================================================================
+# TRAITS CONFIGURATION
+# =============================================================================
+traits:
+
+  # ---------------------------------------------------------------------------
+  # AUTHENTICATION - API authentication methods
+  # ---------------------------------------------------------------------------
+  authentication:
+    enabled: true
+    capabilities:
+      authentication: 1.0
+      authorization: 0.9
+      identity: 0.8
+      access_control: 0.9
+      credential_management: 0.7
+
+    features:
+      api_keys: true
+      jwt: true
+      oauth: false
+      basic_auth: true
+      wp_auth: true
+      hmac: false
+      mfa: false
+      token_revocation: true
+
+    token:
+      algorithm: HS256
+      expiration: 3600
+      refresh_enabled: true
+      refresh_expiration: 86400
+      issuer: gcore-api
+      audience: api-clients
+
+    api_keys:
+      enabled: true
+      key_prefix: "gcore-"
+      key_length: 32
+      expiration: 0  # 0 = no expiration
+      rate_limit_enabled: true
+      rate_limit_max: 100
+
+    basic_auth:
+      enabled: true
+      realm: gCore API
+
+    wp_auth:
+      enabled: true
+      cookie_auth: true
+      nonce_auth: true
+
+    routes:
+      public:
+        - /health
+        - /status
+        - /docs
+      protected_default:
+        - "*"
+      admin_only:
+        - /admin/*
+        - /settings/*
+
+    storage:
+      backend: valkey
+      key_prefix: "auth:"
+      token_prefix: "token:"
+      api_key_prefix: "api_key:"
+
+  # ---------------------------------------------------------------------------
+  # ENDPOINT MANAGER - Endpoint registration and routing
+  # ---------------------------------------------------------------------------
+  endpointManager:
+    enabled: true
+    capabilities:
+      endpoint_registration: 1.0
+      endpoint_management: 1.0
+      dynamic_routing: 0.8
+      route_discovery: 0.7
+      permission_management: 0.9
+
+    features:
+      permission_handling: true
+      rest_api: true
+      bulk_registration: true
+      namespace_isolation: true
+      version_routing: true
+      documentation: true
+      auto_discovery: false
+
+    validation:
+      check_duplicate_routes: true
+      validate_callbacks: true
+      validate_namespace: true
+      validate_permissions: true
+
+    defaults:
+      permission_callback: __return_true
+      methods: [GET]
+
+    documentation:
+      enabled: true
+      format: openapi
+      version: "3.0.0"
+      auto_generate: false
+      include_examples: true
+
+    cache:
+      endpoint_cache: true
+      ttl: 3600
+
+  # ---------------------------------------------------------------------------
+  # REQUEST PROCESSOR - Request pipeline and middleware
+  # ---------------------------------------------------------------------------
+  requestProcessor:
+    enabled: true
+    capabilities:
+      request_handling: 1.0
+      middleware: 1.0
+      pipeline_processing: 0.9
+      request_transformation: 0.8
+      response_formatting: 0.9
+      lifecycle_management: 0.7
+
+    features:
+      early_termination: true
+      conditional_processing: true
+      priority_handling: true
+      error_boundary: true
+      response_transformation: true
+      timeout_handling: true
+      circuit_breaker: false
+
+    middleware:
+      default_order:
+        - auth
+        - validate
+        - rate_limit
+        - cache
+        - error_handler
+        - metrics
+        - main_handler
+      global:
+        - error_handler
+        - metrics
+      conditional:
+        - name: cache
+          condition: "request.method === GET"
+        - name: auth
+          condition: "request.requires_auth === true"
+        - name: validate
+          condition: "request.validate === true"
+
+    pipeline:
+      max_depth: 10
+      timeout: 30000  # 30 seconds
+      catch_errors: true
+      debug_mode: false
+
+  # ---------------------------------------------------------------------------
+  # RESPONSE CACHE - Response caching strategies
+  # ---------------------------------------------------------------------------
+  responseCache:
+    enabled: true
+    capabilities:
+      response_caching: 1.0
+      cache_invalidation: 0.9
+      cache_strategy: 0.8
+      cache_segmentation: 0.7
+      conditional_caching: 0.9
+
+    features:
+      vary_headers: true
+      conditional_caching: true
+      ttl_configuration: true
+      segment_caching: true
+      cache_tags: true
+      auto_purge: true
+      stale_while_revalidate: true
+      cache_compression: false
+
+    ttl_defaults:
+      default: 3600
+      query: 300
+      meta: 1800
+      content: 3600
+      status: 60
+      user: 1800
+      admin: 60
+
+    cache_keys:
+      include_headers:
+        - Accept
+        - Accept-Encoding
+        - Authorization
+      include_cookies: false
+      include_query_params: true
+      normalize_urls: true
+
+    bypass:
+      query_params:
+        - no_cache
+        - bypass_cache
+      headers:
+        - "Cache-Control: no-cache"
+        - "Pragma: no-cache"
+
+    invalidation:
+      auto_invalidate_on:
+        - post_save
+        - term_update
+        - user_update
+      grace_period: 5  # seconds
+
+    storage:
+      backend: valkey
+      prefix: "api_response_cache:"
+      compression: false
+      serialization: json
+
+  # ---------------------------------------------------------------------------
+  # RATE LIMITER - Request throttling
+  # ---------------------------------------------------------------------------
+  rateLimiter:
+    enabled: true
+    capabilities:
+      rate_limiting: 1.0
+      throttling: 0.9
+      quota_management: 0.8
+      request_budgeting: 0.7
+      surge_protection: 0.8
+
+    features:
+      ip_based: true
+      user_based: true
+      token_based: true
+      adaptive_throttling: true
+      route_specific: true
+      method_specific: true
+      cost_based: true
+      tiered_throttling: false
+
+    default_limits:
+      max: 60
+      window: 60
+      cost: 1
+
+    route_specific:
+      write:
+        max: 30
+        window: 60
+        methods: [POST, PUT, PATCH, DELETE]
+      read:
+        max: 120
+        window: 60
+        methods: [GET]
+      batch:
+        max: 5
+        window: 60
+        cost: 5
+      search:
+        max: 15
+        window: 60
+        cost: 2
+
+    exclusions:
+      ips:
+        - "127.0.0.1"
+        - "::1"
+      roles:
+        - administrator
+      capabilities:
+        - manage_options
+      tokens:
+        - system-token
+
+    response:
+      headers:
+        include: true
+        prefix: "X-RateLimit-"
+      body:
+        include_details: true
+
+    storage:
+      backend: valkey
+      key_prefix: "rate_limit:"
+      expiration_buffer: 5
+
+  # ---------------------------------------------------------------------------
+  # VALIDATION - Request/response validation
+  # ---------------------------------------------------------------------------
+  validation:
+    enabled: true
+    capabilities:
+      validation: 1.0
+      schema_checking: 0.9
+      input_sanitization: 0.8
+      data_filtering: 0.7
+      constraint_verification: 0.8
+
+    features:
+      json_schema: true
+      type_checking: true
+      sanitization: true
+      custom_validators: true
+      auto_coercion: true
+      complex_validation: true
+      validation_caching: false
+
+    behavior:
+      stop_on_first_error: false
+      return_all_errors: true
+      default_required: false
+      max_errors: 10
+
+    sanitization:
+      auto_sanitize: true
+      sanitize_html: true
+      trim_strings: true
+      normalize_empty: true
+
+    schema:
+      directory: schemas/api
+      extension: .json
+      version: draft-07
+      cache_time: 3600
+
+    types:
+      string:
+        trim: true
+        max_length: 65535
+      number:
+        min: null
+        max: null
+      integer:
+        min: null
+        max: null
+      array:
+        max_items: 1000
+
+    error_handling:
+      verbose: true
+      include_data: false
+      include_schema: false
+
+    custom_validators:
+      enabled: true
+      directory: validators
+
+  # ---------------------------------------------------------------------------
+  # METRICS COLLECTOR - Request metrics and analytics
+  # ---------------------------------------------------------------------------
+  metricsCollector:
+    enabled: true
+    capabilities:
+      metrics: 1.0
+      monitoring: 0.9
+      analytics: 0.8
+      reporting: 0.7
+      alarming: 0.6
+
+    features:
+      request_tracking: true
+      performance_monitoring: true
+      error_tracking: true
+      usage_analytics: true
+      resource_utilization: true
+      alerts: false
+      exporters: false
+      dashboards: false
+
+    collection:
+      enabled: true
+      sample_rate: 1.0  # 1.0 = 100% of requests
+      include_headers: false
+      include_body: false
+      include_query: true
+      include_ip: true
+      anonymize_ip: true
+
+    metrics:
+      request_count: true
+      response_time: true
+      status_codes: true
+      error_rates: true
+      cache_hits: true
+      rate_limit_hits: true
+      endpoint_usage: true
+      user_activity: true
+
+    dimensions:
+      route: true
+      method: true
+      status_code: true
+      user_agent: true
+      referrer: false
+      user_id: true
+      api_key: true
+
+    aggregation:
+      intervals:
+        - 60      # 1 minute
+        - 300     # 5 minutes
+        - 3600    # 1 hour
+        - 86400   # 1 day
+      functions:
+        - count
+        - sum
+        - avg
+        - min
+        - max
+        - p95
+        - p99
+
+    retention:
+      raw: 3600        # 1 hour
+      minute: 86400    # 1 day
+      hour: 604800     # 7 days
+      day: 2592000     # 30 days
+
+    storage:
+      backend: valkey
+      key_prefix: "metrics:"
+      counter_prefix: "counter:"
+      gauge_prefix: "gauge:"
+      histogram_prefix: "histogram:"
+
+    export:
+      formats:
+        - json
+        - prometheus
+      auto_export: false
+      export_interval: 60
+
+  # ---------------------------------------------------------------------------
+  # WEBSOCKET - Real-time communication (disabled by default)
+  # ---------------------------------------------------------------------------
+  webSocket:
+    enabled: false
+    capabilities:
+      websocket: 1.0
+      realtime: 0.9
+      pubsub: 0.8
+      bidirectional: 0.9
+      push_notifications: 0.7
+
+    features:
+      authentication: true
+      channels: true
+      presence: false
+      history: false
+      auto_reconnect: true
+      heartbeat: true
+      binary_support: false
+      compression: false
+
+    server:
+      port: 8080
+      host: "0.0.0.0"
+      path: /ws
+      max_connections: 1000
+      ping_interval: 30
+      ping_timeout: 10
+      close_timeout: 5
+
+    channels:
+      notifications:
+        description: System notifications
+        public: false
+        auth_required: true
+      content:
+        description: Content updates
+        public: true
+        auth_required: false
+      metrics:
+        description: System metrics
+        public: false
+        auth_required: true
+
+    authentication:
+      required: true
+      methods:
+        - token
+        - cookie
+      expiration: 3600
+
+    message:
+      max_size: 65536
+      rate_limit: 10
+      queue_size: 100
+
+    history:
+      enabled: false
+      max_size: 100
+      ttl: 3600

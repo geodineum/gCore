@@ -1,0 +1,24 @@
+runtime:
+  # owner resolved from GEODEPLOY_DEPLOY_USER / DEPLOY_USER /
+  # /etc/geodineum/deploy.env.
+  # geodineum-code: the single group whose only purpose is reading deployed
+  # shared framework/library/theme source. Members are exactly the identities
+  # that consume it (www-data for web, geodine for the in-process library).
+  # NOT a credentials group — no secret is ever filed here.
+  group: geodineum-code
+
+triggers:
+  - match: "**/*.php"
+    actions: [opcache-clear]
+  - match: "Modules/Core/**|bootstrap.php|gcore-*"
+    actions: [php-fpm-restart]
+
+dirty-tree:
+  strategy: stash
+
+cli:
+  commands:
+    - name: gcore contract
+      handler: scripts/cli/gcore-contract.sh
+      description: Print the gCore integration contract (container, build-with managers, CH1 stubs, lifecycle)
+      category: gCore

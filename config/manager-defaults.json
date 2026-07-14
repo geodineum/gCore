@@ -1,0 +1,143 @@
+{
+  "_meta": {
+    "description": "Canonical defaults for gCore manager config. Seeded into ValKey at {default}:gcore:config:<Manager> by the installer bootloader (scripts/seed-manager-defaults.sh). Consulted ONLY at install time — runtime reads from ValKey, not from this file.",
+    "encoding": "Values are stored as strings in ValKey HASH fields. Booleans use 'true'/'false' (NOT '1'/'0'). Nested arrays/objects are JSON-encoded. See ManagerConfigTrait docblock for full encoding contract.",
+    "version": "1.0.0",
+    "generated_from": "2026-05-22 config audit + Wave 1-3 manager refactors"
+  },
+
+  "HtaccessManager": {
+    "debug": "false"
+  },
+
+  "IPBlockManager": {
+    "debug": "false"
+  },
+
+  "BackupManager": {
+    "debug": "false",
+    "permissions.files": "420",
+    "permissions.directories": "493"
+  },
+
+  "VersionManager": {
+    "version_prefix": "gCore_",
+    "auto_increment": "true",
+    "store_history": "true",
+    "debug": "false",
+    "ttl": "86400",
+    "site_id": "default",
+    "node_id": "node1"
+  },
+
+  "FormatManager": {
+    "use_gnode": "true",
+    "auto_detect": "true",
+    "validation_mode": "strict",
+    "cache_formats": "true"
+  },
+
+  "AssetManager": {
+    "site_id": "default",
+    "node_id": "node1",
+    "default_ttl": "0",
+    "bundle_ttl": "300",
+    "default_minify": "false",
+    "default_gzip": "false",
+    "cache_assets": "true"
+  },
+
+  "StateManager": {
+    "history_depth": "100",
+    "cache_ttl": "0",
+    "counter_ttl": "0",
+    "transaction_timeout": "300",
+    "pub_channel": "state",
+    "site_id": "default",
+    "node_id": "node1"
+  },
+
+  "WordPressManager": {
+    "preserve_admin": "true",
+    "scrub_comments": "true",
+    "scrub_woocommerce": "true"
+  },
+
+  "ResourceManager": {
+    "site_id": "default",
+    "node_id": "node1",
+    "use_gnode": "true",
+    "cache_enabled": "true",
+    "optimization_enabled": "true",
+    "default_bundle_type": "mixed",
+    "default_minify": "true",
+    "default_ttl": "3600",
+    "max_bundle_size": "1048576",
+    "debug": "false"
+  },
+
+  "APIManager": {
+    "cors": "{\"enabled\":true,\"allowed_origins\":[\"*\"],\"allowed_methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"allowed_headers\":[\"Content-Type\",\"Authorization\",\"X-API-Key\"],\"expose_headers\":[],\"max_age\":3600}",
+    "rate_limit": "{\"enabled\":true,\"requests\":100,\"period\":60}",
+    "cache": "{\"enabled\":true,\"ttl\":300}",
+    "auth": "{\"enabled\":true,\"methods\":[\"api_key\",\"jwt\"]}",
+    "server": "{\"mode\":\"auto\",\"port\":8000,\"host\":\"0.0.0.0\"}",
+    "site_id": "default",
+    "node_id": "node1"
+  },
+
+  "CacheManager": {
+    "storage": "{\"host\":null,\"port\":null,\"timeout\":2.0,\"prefix\":\"cache_\",\"auth\":null}",
+    "default_ttl": "3600",
+    "site_id": "default",
+    "node_id": "node1",
+    "use_gnode": "true"
+  },
+
+  "ErrorManager": {
+    "storage": "{\"host\":null,\"port\":null,\"timeout\":2.0,\"prefix\":\"error_\",\"auth\":null}",
+    "default_ttl": "604800",
+    "ttl_by_level": "{\"debug\":3600,\"info\":3600,\"notice\":21600,\"warning\":86400,\"error\":604800,\"critical\":2592000,\"alert\":2592000,\"emergency\":2592000}",
+    "skip_info_storage": "true",
+    "max_errors": "1000",
+    "error_threshold": "50",
+    "capture_backtraces": "true",
+    "notification_channels": "[\"email\"]",
+    "notification_rate_limit": "60",
+    "site_id": "default",
+    "node_id": "node1"
+  },
+
+  "CookieManager": {
+    "enabled": "true",
+    "display_banner": "false",
+    "debug": "false",
+    "consent_duration": "31536000",
+    "require_explicit_consent": "true",
+    "minimum_age": "16",
+    "admin_capability": "manage_options",
+    "site_id": "default",
+    "node_id": "node1"
+  },
+
+  "InstallManager": {
+    "site_id": "default",
+    "node_id": "node1",
+    "debug": "false",
+    "auto_verify": "true",
+    "verify_interval": "86400",
+    "use_gnode": "true",
+    "permissions.files": "420",
+    "permissions.directories": "493"
+  },
+
+  "SecurityManager": {
+    "site_id": "default",
+    "node_id": "node1",
+    "default_role": "guest",
+    "require_2fa": "false",
+    "content_security_policy": "[]",
+    "cors": "{\"enabled\":true,\"allowed_origins\":[\"*\"],\"allowed_methods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\",\"OPTIONS\"],\"allowed_headers\":[\"Content-Type\",\"Authorization\",\"X-API-Key\"]}",
+    "traits": "[]"
+  }
+}

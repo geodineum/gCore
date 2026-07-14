@@ -1,0 +1,735 @@
+# =============================================================================
+# SecurityManager - Unified Configuration
+# =============================================================================
+# CONSOLIDATED: managers/SecurityManager.yaml + 12 trait configs
+# Version: 2.0.0 (Unified)
+#
+# This file is the SINGLE SOURCE OF TRUTH for SecurityManager configuration.
+# All trait configurations are embedded inline under the 'traits' section.
+#
+# Trait Dependencies:
+#   - advancedCrypto → crypto
+#   - advancedRules → securityRules
+#   - alerting → securityMonitoring
+#   - wordpressIntegration → dataSanitization, headerSecurity, securityRules
+# =============================================================================
+
+enabled: true
+implementation: standalone
+
+adapters:
+  capability:
+    standalone: gCore\Modules\Core\Adapters\Security\StandaloneCapabilityChecker
+  storage:
+    standalone: gCore\Modules\Core\Adapters\Shared\ValKeyStorage
+
+# =============================================================================
+# CORE CONFIGURATION
+# =============================================================================
+config:
+  debug: false
+
+  protocol:
+    type: TLSv1.3
+    min_version: TLSv1.2
+    cipher_list: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305"
+    certificate_verification: true
+    disable_compression: true
+
+  firewall:
+    enabled: true
+    mode: deny
+    allowed_ips: []
+    blocked_ips: []
+    country_blocking:
+      enabled: false
+      blocked_countries: []
+    rate_limiting: true
+
+  updates:
+    auto_update: true
+    security_patches_only: false
+    notification_email: "${SECURITY_NOTIFICATION_EMAIL:-admin@example.com}"
+
+  audit:
+    enabled: true
+    log_level: detailed
+    retention_days: 90
+
+  extension_features:
+    quantum_resistant:
+      enabled: false
+      license_key: "${QUANTUM_RESISTANT_LICENSE_KEY}"
+    advancedAnalytics:
+      enabled: false
+      license_key: "${ADVANCED_ANALYTICS_LICENSE_KEY}"
+    customAlerts:
+      enabled: false
+      license_key: "${CUSTOM_ALERTS_LICENSE_KEY}"
+
+# =============================================================================
+# TRAITS CONFIGURATION
+# =============================================================================
+traits:
+
+  # ---------------------------------------------------------------------------
+  # CRYPTO - Basic cryptographic operations
+  # ---------------------------------------------------------------------------
+  crypto:
+    enabled: true
+    implementation: classic  # classic | quantum_ready
+    algorithm: AES-256-GCM
+    key:
+      size: 32
+      rotation: 30  # days
+      retention: 7  # days after rotation
+      ttl: 30       # days
+    hash_algorithm: SHA256
+    capabilities:
+      - symmetric_encryption
+      - asymmetric_encryption
+      - digital_signatures
+      - key_exchange
+
+  # ---------------------------------------------------------------------------
+  # ADVANCED CRYPTO - Post-quantum and enhanced cryptography
+  # ---------------------------------------------------------------------------
+  advancedCrypto:
+    enabled: true
+    depends_on: [crypto]
+
+    post_quantum:
+      enabled: true
+      algorithms:
+        kem: Kyber1024
+        signature: Dilithium5
+
+    encryption:
+      algorithm: AES-256-GCM
+      key_derivation:
+        algorithm: PBKDF2
+        iterations: 10000
+
+    hashing:
+      algorithm: SHA3-256
+
+    hybrid_handshake:
+      enabled: true
+      max_sessions: 10000
+      cleanup_interval: 300
+
+    key_rotation:
+      enabled: true
+      backup_location: "${GCORE_CACHE_PATH:-/var/cache/gcore}/key_backup"
+
+    batch_operations: true
+    parallel_verification: true
+    validation_mode: strict
+    error_handling: fail_secure
+    legacy_compatibility: true
+
+  # ---------------------------------------------------------------------------
+  # DATA SANITIZATION - Input validation and sanitization
+  # ---------------------------------------------------------------------------
+  dataSanitization:
+    enabled: true
+
+    validation:
+      encoding: UTF-8
+      strict: true
+
+    sql:
+      allow_multi_statement: false
+
+    limits:
+      max_array_depth: 5
+      max_query_length: 4096
+      max_joins: 5
+      max_subqueries: 2
+
+    upload:
+      max_size: 5242880  # 5MB
+      allowed_mime_types:
+        - image/jpeg
+        - image/png
+        - image/svg+xml
+
+  # ---------------------------------------------------------------------------
+  # SECURITY RULES - Core access control and validation rules
+  # ---------------------------------------------------------------------------
+  securityRules:
+    enabled: true
+
+    capability_cache_ttl: 300
+
+    role_hierarchy:
+      admin: [manager, editor, author, subscriber]
+      manager: [editor, author, subscriber]
+      editor: [author, subscriber]
+      author: [subscriber]
+      subscriber: []
+
+    capabilities:
+      manage_security_rules: admin
+      view_security_rules: [admin, manager]
+      manage_roles: admin
+
+    validation_rules:
+      password:
+        min_length: 14
+        require_uppercase: true
+        require_lowercase: true
+        require_numbers: true
+        require_special: true
+        disallow_common: true
+        max_age_days: 90
+        history_check: 5
+        min_change_characters: 8
+
+      auth:
+        max_attempts: 5
+        lockout_duration: 900
+        require_2fa: true
+        allowed_2fa_methods: [app, email, sms, hardware]
+        brute_force_protection:
+          enabled: true
+          progressive_delays: true
+          max_attempts_per_ip: 20
+          ip_blocking_duration: 3600
+          alert_on_suspicious: true
+
+      session:
+        max_lifetime: 1800
+        require_ssl: true
+        regenerate_interval: 300
+        ip_binding: true
+        user_agent_binding: true
+        idle_timeout: 900
+        absolute_timeout: 43200
+        enforce_single_session: false
+
+    permissions:
+      privilege_escalation:
+        require_verification: true
+        verification_methods: [2fa, password]
+        timeout: 300
+      sensitive_operations:
+        require_verification: true
+        operations:
+          - key_management
+          - security_config
+          - user_admin
+          - role_management
+
+    rate_limiting:
+      enabled: true
+      requests_per_minute: 60
+      burst_allowance: 10
+      security_endpoints:
+        requests_per_minute: 30
+        burst_allowance: 5
+      slow_down:
+        enabled: true
+        threshold: 80
+        delay_ms: 500
+      by_endpoint:
+        login:
+          requests_per_minute: 10
+          burst_allowance: 3
+        admin:
+          requests_per_minute: 30
+          burst_allowance: 5
+
+    audit:
+      enabled: true
+      level: detailed
+      retention_days: 90
+      include_security_events: true
+      log_format: json
+      destinations:
+        valkey: true
+        file: true
+        syslog: false
+
+  # ---------------------------------------------------------------------------
+  # ADVANCED RULES - Rule engine and simulation
+  # ---------------------------------------------------------------------------
+  advancedRules:
+    enabled: true
+    depends_on: [securityRules]
+
+    rule_compiler:
+      enabled: true
+      optimization_level: 2
+
+    simulation_engine:
+      timeout: 5
+      memory_limit: 134217728  # 128M
+      max_iterations: 1000
+
+    chain_processor:
+      max_depth: 3
+      timeout: 30
+      parallel_execution: false
+
+    performance:
+      track_execution_time: true
+      alert_threshold: 1.0
+
+    storage:
+      compress: true
+      encryption:
+        enabled: true
+        algorithm: AES-256-GCM
+
+    audit:
+      enabled: true
+      cleanup_interval: 86400
+
+    retry_attempts: 3
+    strict_validation: true
+
+  # ---------------------------------------------------------------------------
+  # XSS PREVENTION - Cross-site scripting protection
+  # ---------------------------------------------------------------------------
+  xssPrevention:
+    enabled: true
+
+    auto_escape: true
+    input_filtering: true
+    output_encoding: true
+
+    csp:
+      enabled: true
+      report_only: false
+      report_endpoint: /csp-violation-report-endpoint
+
+    blocked_attributes:
+      - onload
+      - onerror
+      - onclick
+      - onmouseover
+      - onmouseout
+      - onfocus
+      - onblur
+      - onchange
+      - onsubmit
+      - onkeypress
+      - onkeydown
+      - onkeyup
+      - href
+      - action
+      - formaction
+      - data
+      - src
+      - srcdoc
+      - xlink:href
+      - style
+
+    blocked_elements:
+      - script
+      - iframe
+      - object
+      - embed
+      - form
+      - svg
+      - math
+      - meta
+      - link
+      - base
+      - marquee
+      - blink
+
+    blocked_protocols:
+      - "javascript:"
+      - "data:"
+      - "vbscript:"
+      - "blob:"
+      - "file:"
+      - "mhtml:"
+      - "x-javascript:"
+
+    trusted_domains:
+      - fonts.googleapis.com
+      - cdn.jsdelivr.net
+
+    csp_directives:
+      default-src: "'self'"
+      script-src: "'self' 'nonce-{NONCE}'"
+      style-src: "'self' 'nonce-{NONCE}' fonts.googleapis.com"
+      img-src: "'self' data: https:"
+      font-src: "'self' fonts.gstatic.com"
+      connect-src: "'self'"
+      frame-ancestors: "'none'"
+      form-action: "'self'"
+      base-uri: "'self'"
+      object-src: "'none'"
+
+    nonce:
+      length: 32
+      cache_ttl: 3600
+      verification: true
+
+  # ---------------------------------------------------------------------------
+  # HEADER SECURITY - HTTP security headers
+  # ---------------------------------------------------------------------------
+  headerSecurity:
+    enabled: true
+
+    headers:
+      X-Frame-Options: DENY
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: strict-origin-when-cross-origin
+      Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+
+    hsts:
+      enabled: true
+      max_age: 31536000
+      include_subdomains: true
+      preload: true
+
+    csp:
+      enabled: true
+      use_nonce: true
+
+    cors:
+      enabled: false
+      allowed_origins: []
+      allowed_methods: [GET, POST, PUT, DELETE, OPTIONS]
+      allowed_headers: [Content-Type, Authorization, X-Requested-With]
+      max_age: 86400
+
+    subresource_integrity: true
+
+    remove_headers:
+      - Server
+      - X-Powered-By
+      - X-AspNet-Version
+
+    monitoring:
+      track_violations: true
+      violations_window: 300
+      max_violations: 5
+
+    security_txt:
+      enabled: true
+      contact: "${SECURITY_CONTACT_EMAIL:-security@example.com}"
+      expires: 365
+
+    # Environment-specific overrides
+    environments:
+      development:
+        hsts:
+          enabled: false
+        csp:
+          report_only: true
+      staging:
+        csp:
+          report_only: true
+
+  # ---------------------------------------------------------------------------
+  # HARDWARE SECURITY - HSM/TPM integration
+  # ---------------------------------------------------------------------------
+  hardwareSecurity:
+    enabled: false  # Enable only when HSM available
+
+    provider: auto  # auto | pkcs11 | yubikey | tpm | opensc | secure_enclave
+
+    hsm:
+      cache:
+        enabled: true
+        ttl: 1800
+        prefix: "hsm:"
+      signature_mechanism: SHA384withRSA
+      key_types:
+        rsa:
+          min_size: 2048
+          max_size: 4096
+        ecdsa:
+          curves: [P-256, P-384, P-521]
+
+    allowed_operations:
+      - sign
+      - verify
+      - encrypt
+      - decrypt
+      - generate_key
+      - import_key
+      # export_key deliberately excluded
+
+    key_rotation:
+      enabled: true
+      interval_days: 90
+      automatic: true
+      retention_days: 180
+
+    tpm:
+      device: /dev/tpmrm0
+      pcr_protection: true
+
+    limits:
+      max_key_uses: 1000000
+      max_key_lifetime_days: 365
+
+    audit:
+      enabled: true
+      track_operations: true
+
+  # ---------------------------------------------------------------------------
+  # SECURITY MONITORING - Event tracking and analysis
+  # ---------------------------------------------------------------------------
+  securityMonitoring:
+    enabled: true
+
+    retention:
+      events:
+        max_count: 10000
+        max_days: 30
+      errors:
+        max_count: 5000
+        max_days: 30
+      critical:
+        max_count: 1000
+        max_days: 90
+
+    rate_limiting:
+      alerts_per_window: 10
+      window_seconds: 3600
+
+    critical_events:
+      - auth_breach
+      - sql_injection
+      - xss_attempt
+      - file_system_breach
+      - encryption_failure
+      - api_compromise
+
+    alert_channels:
+      - email
+      - slack
+      - webhook
+
+    templates:
+      default: |
+        Security Event: {event_type}
+        Severity: {severity}
+        Time: {timestamp}
+        Details: {details}
+      critical: |
+        CRITICAL SECURITY ALERT
+        Event: {event_type}
+        Time: {timestamp}
+        Source: {source_ip}
+        User: {user_id}
+        Details: {details}
+        Immediate action required.
+
+  # ---------------------------------------------------------------------------
+  # ALERTING - Alert delivery and management
+  # ---------------------------------------------------------------------------
+  alerting:
+    enabled: true
+    depends_on: [securityMonitoring]
+
+    channels:
+      primary:
+        - email
+        - slack
+        - webhook
+      failover:
+        - slack
+        - webhook
+
+    email:
+      enabled: true
+      include_attachments: true
+      max_attachment_size: 5242880  # 5MB
+
+    rate_limiting:
+      max_alerts: 50
+      window_seconds: 3600
+      burst_limit: 10
+
+    delivery:
+      track: true
+      health_check_interval: 300
+
+    retention:
+      days: 30
+      compress: true
+
+    templates:
+      default_alert:
+        subject: "[Security] {severity}: {event_type}"
+        body: |
+          A security event has been detected.
+          Type: {event_type}
+          Severity: {severity}
+          Time: {timestamp}
+          Details: {details}
+      critical_alert:
+        subject: "[CRITICAL] Security Alert: {event_type}"
+        body: |
+          IMMEDIATE ATTENTION REQUIRED
+          A critical security event has been detected.
+          Type: {event_type}
+          Time: {timestamp}
+          Source: {source_ip}
+          User: {user_id}
+          Details: {details}
+
+  # ---------------------------------------------------------------------------
+  # ADVANCED AUTHENTICATION - SSO, MFA, and session management
+  # ---------------------------------------------------------------------------
+  advancedAuthentication:
+    enabled: true
+
+    session_ttl: 86400  # 24 hours
+
+    providers:
+      local:
+        enabled: true
+      ldap:
+        enabled: false
+        server: null
+        base_dn: null
+      oauth:
+        google:
+          enabled: false
+          client_id: null
+          client_secret: null
+        github:
+          enabled: false
+          client_id: null
+          client_secret: null
+
+    mfa:
+      enabled: true
+      methods:
+        totp:
+          enabled: true
+          issuer: gCore
+          algorithm: SHA1
+          digits: 6
+          period: 30
+        email:
+          enabled: true
+          code_length: 6
+          expiry: 300
+        sms:
+          enabled: false
+        backup_codes:
+          enabled: true
+          count: 10
+          length: 8
+
+    webauthn:
+      enabled: true
+      rp_name: gCore Security
+      attestation: none
+      user_verification: preferred
+
+    sso:
+      enabled: false
+      providers:
+        azure:
+          enabled: false
+          tenant_id: null
+          client_id: null
+        okta:
+          enabled: false
+          domain: null
+          client_id: null
+
+    workflows:
+      default:
+        steps: [password, mfa]
+        timeout: 300
+      sso_only:
+        steps: [sso]
+        timeout: 60
+      enhanced:
+        steps: [password, mfa, device_verification]
+        timeout: 600
+
+    rate_limiting:
+      max_attempts: 10
+      window_seconds: 300
+
+    session:
+      secure: true
+      httponly: true
+      samesite: Lax
+
+    recovery:
+      enabled: true
+      methods:
+        - email
+        - backup_codes
+
+    tls:
+      min_version: "1.2"
+
+  # ---------------------------------------------------------------------------
+  # WORDPRESS INTEGRATION - WordPress-specific security
+  # ---------------------------------------------------------------------------
+  wordpressIntegration:
+    enabled: auto  # auto | true | false
+    depends_on: [dataSanitization, headerSecurity, securityRules]
+
+    auto_detect: true
+
+    rest_api:
+      namespace: gcore/v1/security
+      verify_nonce: true
+      rate_limit:
+        requests_per_minute: 30
+        burst: 5
+
+    admin_ui:
+      enabled: true
+      menu_position: 30
+      dashboard_widget: true
+      notifications:
+        enabled: true
+        colors:
+          critical: "#dc3232"
+          warning: "#ffb900"
+          info: "#0073aa"
+
+    security:
+      level: high  # low | medium | high
+      auto_scan:
+        enabled: true
+        schedule: daily
+        scope: full
+      auto_remediate: false
+
+    roles:
+      security_admin:
+        capabilities:
+          - manage_security
+          - view_security_logs
+          - configure_firewall
+      security_viewer:
+        capabilities:
+          - view_security_logs
+
+    monitoring:
+      user_actions: true
+      settings_changes: true
+      realtime_critical: true
+
+    caching:
+      enabled: true
+      ttl: 1800
+      backend: valkey
+      fallback: object_cache
+
+    requirements:
+      min_wordpress: "5.8"
+      extensions:
+        - openssl
+        - json
+        - mbstring

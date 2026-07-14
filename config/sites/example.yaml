@@ -1,0 +1,55 @@
+# =============================================================================
+# Site Configuration Template
+# =============================================================================
+# Copy to /etc/geodineum/sites/{site_id}.yaml
+#
+# This file OVERRIDES values from /etc/geodineum/components/gCore/default.yaml
+# Only include values that DIFFER from defaults (deep merge).
+#
+# Example: /etc/geodineum/sites/staging_example_com.yaml
+# =============================================================================
+
+site_id: example_com
+environment: production  # testing | staging | acceptance | production
+theme: gCube             # gCube | your child theme
+
+# =============================================================================
+# SITE-SPECIFIC OVERRIDES (examples - uncomment as needed)
+# =============================================================================
+
+# Override manager settings
+# managers:
+#   APIManager:
+#     rate_limiting:
+#       max: 100           # Higher for this site
+#       exclusions:
+#         ips:
+#           - "10.0.0.0/8"  # Internal network
+#
+#   SecurityManager:
+#     firewall:
+#       allowed_ips:
+#         - "192.168.1.0/24"
+#     traits:
+#       securityRules:
+#         auth:
+#           require_2fa: false  # Disable 2FA for this site
+
+# Override capabilities for topology registration
+# capabilities:
+#   throughput_tier: enterprise
+#   latency_class: realtime
+
+# Site metadata
+# metadata:
+#   owner: "Company Name"
+#   contact: "admin@example.com"
+
+# Environment gate (non-production only)
+# security:
+#   viewkey: "secret-preview-key"
+#   viewkey_expiry: 86400
+
+# Branding for gate screen
+# branding:
+#   logo_url: "https://example.com/logo.png"

@@ -1,0 +1,612 @@
+# =============================================================================
+# gCore Framework - Unified Configuration
+# =============================================================================
+# SINGLE SOURCE OF TRUTH for all gCore settings.
+#
+# Location: /etc/geodineum/components/gCore/default.yaml
+# Override: /etc/geodineum/sites/{site_id}.yaml (site-specific)
+#
+# Inheritance: sites/{site_id}.yaml deep-merges with this file.
+# Only override what differs from defaults.
+#
+# Version: 2.0.0
+# =============================================================================
+
+version: "2.0.0"
+
+# =============================================================================
+# §1 CORE SETTINGS
+# =============================================================================
+core:
+  environment: production
+  debug: false
+  log_path: "${GCORE_LOG_PATH:-/var/log/geodineum/gcore}"
+  automatic_initialization: true
+
+  service:
+    host: "${GCORE_SERVICE_HOST:-0.0.0.0}"
+    port: "${GCORE_SERVICE_PORT:-8080}"
+    protocol: https
+
+# =============================================================================
+# §2 VALKEY CONNECTION
+# =============================================================================
+# Credentials loaded from /etc/geodineum/credentials/valkey_client_{site_id}.password
+valkey:
+  host: "${VALKEY_HOST:-127.0.0.1}"
+  port: "${VALKEY_PORT:-47445}"
+  timeout: 2.0
+  database: 0
+  persistent: true
+  read_timeout: -1
+
+# =============================================================================
+# §3 FEATURE FLAGS
+# =============================================================================
+features:
+  valkey: true
+  distributed_cache: true
+  microservices: false
+  advanced_metrics: false
+  security:
+    advanced_protection: true
+    zero_trust: true
+    adaptive_security: true
+    runtime_protection: true
+
+# =============================================================================
+# §4 GLOBAL BOUNDARIES
+# =============================================================================
+boundaries:
+  max_string_length: 1048576
+  max_array_depth: 5
+  max_file_size: 5242880
+  blocked_tags:
+    - script
+    - iframe
+    - object
+    - embed
+    - form
+    - svg
+    - math
+    - meta
+    - link
+    - base
+  file_upload:
+    enabled: true
+    max_size: 2097152
+    allowed_mime_types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - application/pdf
+    sanitize_filenames: true
+    verify_mime_type: true
+
+# =============================================================================
+# §5 METRICS
+# =============================================================================
+metrics:
+  enabled: true
+  window: 300
+  collection:
+    performance: true
+    security: true
+    cache: true
+    errors: true
+
+# =============================================================================
+# §6 SERVICE REGISTRY
+# =============================================================================
+# Defines all available managers, their dependencies, and capabilities.
+# Priority determines initialization order (lower = earlier).
+
+services:
+  # -------------------------------------------------------------------------
+  # CORE SERVICES (priority 0-4) - Load first, no dependencies
+  # -------------------------------------------------------------------------
+  gnode_client:
+    class: gCore\gNode\gNodeClient
+    category: core
+    priority: 0
+    enabled: true
+    gnode_required: false
+
+  SecurityManager:
+    class: gCore\Modules\Managers\Base\SecurityManager\SecurityManager
+    category: core
+    priority: 1
+    enabled: true
+    required: true
+
+  ErrorManager:
+    class: gCore\Modules\Managers\Base\ErrorManager\ErrorManager
+    category: core
+    priority: 2
+    enabled: true
+    required: true
+
+  CacheManager:
+    class: gCore\Modules\Managers\Base\CacheManager\CacheManager
+    category: core
+    priority: 3
+    enabled: true
+    required: true
+
+  TemplateManager:
+    class: gCore\Modules\Managers\Base\TemplateManager\TemplateManager
+    category: core
+    priority: 4
+    enabled: true
+    required: true
+    dependencies:
+      - CacheManager
+      - SecurityManager
+
+  # -------------------------------------------------------------------------
+  # BASE SERVICES (priority 5-10) - Standard managers
+  # -------------------------------------------------------------------------
+  FormatManager:
+    class: gCore\Modules\Managers\Base\FormatManager\FormatManager
+    category: base
+    priority: 5
+    enabled: true
+    gnode_required: true
+    dependencies:
+      - gnode_client
+
+  TopologyManager:
+    class: gCore\Modules\Managers\Base\TopologyManager\TopologyManager
+    category: base
+    priority: 5
+    enabled: true
+    gnode_required: true
+    dependencies:
+      - gnode_client
+      - CacheManager
+
+  APIManager:
+    class: gCore\Modules\Managers\Base\APIManager\APIManager
+    category: base
+    priority: 6
+    enabled: true
+
+  SEOManager:
+    class: gCore\Modules\Managers\Base\SEOManager\SEOManager
+    category: base
+    priority: 7
+    enabled: true
+    dependencies:
+      - CacheManager
+
+  OptimizationManager:
+    class: gCore\Modules\Managers\Base\OptimizationManager\OptimizationManager
+    category: base
+    priority: 8
+    enabled: true
+    dependencies:
+      - CacheManager
+
+  ManifestManager:
+    class: gCore\Modules\Managers\Base\ManifestManager\ManifestManager
+    category: base
+    priority: 9
+    enabled: true
+    dependencies:
+      - CacheManager
+
+  # -------------------------------------------------------------------------
+  # FEATURE SERVICES (priority 11-50) - Optional
+  # -------------------------------------------------------------------------
+  CookieManager:
+    class: gCore\Modules\Managers\Base\CookieManager\CookieManager
+    category: feature
+    priority: 12
+    enabled: true
+    dependencies:
+      - ErrorManager
+      - CacheManager
+
+  MetricsManager:
+    class: gCore\Modules\Managers\Base\MetricsManager\MetricsManager
+    category: feature
+    priority: 15
+    enabled: true
+    gnode_required: false
+    dependencies:
+      - gnode_client
+      - CacheManager
+
+  ResourceManager:
+    class: gCore\Modules\Managers\Base\ResourceManager\ResourceManager
+    category: feature
+    priority: 23
+    enabled: true
+    dependencies:
+      - ErrorManager
+      - CacheManager
+
+  # -------------------------------------------------------------------------
+  # OPTIONAL EXTENSION SERVICES (priority 100+) - Full implementations
+  # come from external packages that register themselves via
+  # ExtensionResolver::register(). Until one is loaded the shipped stub
+  # is active and returns stub_mode: true.
+  # -------------------------------------------------------------------------
+  TranslateManager:
+    class: gCore\Modules\Managers\Stubs\TranslateManagerStub
+    category: extension
+    priority: 100
+    enabled: false
+
+  InferenceManager:
+    class: gCore\Modules\Managers\Stubs\InferenceManagerStub
+    category: extension
+    priority: 101
+    enabled: false
+
+  AnalyticsManager:
+    class: gCore\Modules\Managers\Stubs\AnalyticsManagerStub
+    category: extension
+    priority: 102
+    enabled: false
+
+# =============================================================================
+# §7 MANAGER CONFIGURATIONS
+# =============================================================================
+# All manager configs embedded here (no separate files needed).
+
+managers:
+
+  # -------------------------------------------------------------------------
+  # CacheManager
+  # -------------------------------------------------------------------------
+  CacheManager:
+    prefix: "gcore:"
+    default_ttl: 3600
+    max_key_length: 250
+    max_value_size: 1048576
+
+    connection:
+      timeout: 0.5
+      retry_interval: 100
+      persistent: true
+
+    serialization:
+      serializer: igbinary
+      compression: true
+      compression_threshold: 1024
+      compression_level: 1
+
+    gnode:
+      enabled: true
+      namespacing: true
+      legacy_fallback: true
+      batch_threshold: 10
+      timeout_ms: 1000
+
+  # -------------------------------------------------------------------------
+  # SecurityManager
+  # -------------------------------------------------------------------------
+  SecurityManager:
+    debug: false
+
+    protocol:
+      type: TLSv1.3
+      min_version: TLSv1.2
+      certificate_verification: true
+      disable_compression: true
+
+    firewall:
+      enabled: true
+      mode: deny
+      rate_limiting: true
+
+    audit:
+      enabled: true
+      log_level: detailed
+      retention_days: 90
+
+    traits:
+      crypto:
+        enabled: true
+        algorithm: AES-256-GCM
+        key_size: 32
+        key_rotation_days: 30
+
+      advancedCrypto:
+        enabled: true
+        post_quantum:
+          enabled: true
+          algorithms:
+            kem: Kyber1024
+            signature: Dilithium5
+
+      dataSanitization:
+        enabled: true
+        encoding: UTF-8
+        strict: true
+        max_array_depth: 5
+
+      securityRules:
+        enabled: true
+        capability_cache_ttl: 300
+        password:
+          min_length: 14
+          require_uppercase: true
+          require_lowercase: true
+          require_numbers: true
+          require_special: true
+        auth:
+          max_attempts: 5
+          lockout_duration: 900
+          require_2fa: true
+        session:
+          max_lifetime: 1800
+          require_ssl: true
+          regenerate_interval: 300
+        rate_limiting:
+          requests_per_minute: 60
+          burst_allowance: 10
+
+      xssPrevention:
+        enabled: true
+        auto_escape: true
+        input_filtering: true
+        output_encoding: true
+        csp:
+          enabled: true
+          report_only: false
+
+      headerSecurity:
+        enabled: true
+        headers:
+          X-Frame-Options: DENY
+          X-Content-Type-Options: nosniff
+          X-XSS-Protection: "1; mode=block"
+          Referrer-Policy: strict-origin-when-cross-origin
+        hsts:
+          enabled: true
+          max_age: 31536000
+          include_subdomains: true
+          preload: true
+
+      hardwareSecurity:
+        enabled: false  # Enable only when HSM available
+
+      securityMonitoring:
+        enabled: true
+        retention:
+          events_max_count: 10000
+          events_max_days: 30
+          critical_max_days: 90
+
+      alerting:
+        enabled: true
+        channels:
+          primary: [email, slack, webhook]
+        rate_limiting:
+          max_alerts: 50
+          window_seconds: 3600
+
+      advancedAuthentication:
+        enabled: true
+        session_ttl: 86400
+        mfa:
+          enabled: true
+          methods:
+            totp: { enabled: true, issuer: gCore }
+            email: { enabled: true, code_length: 6, expiry: 300 }
+            backup_codes: { enabled: true, count: 10 }
+        webauthn:
+          enabled: true
+          attestation: none
+
+      wordpressIntegration:
+        enabled: auto
+        rest_api:
+          namespace: gcore/v1/security
+          verify_nonce: true
+        security_level: high
+
+  # -------------------------------------------------------------------------
+  # APIManager
+  # -------------------------------------------------------------------------
+  APIManager:
+    api_version: "1.0"
+    namespace: gcore/v1
+    debug: false
+
+    cache:
+      enabled: true
+      ttl: 3600
+      ttls_by_category:
+        content: 3600
+        meta: 1800
+        query: 300
+        status: 60
+
+    rate_limiting:
+      enabled: true
+      window: 60
+      max: 60
+      batch_size_limit: 100
+      exclusions:
+        ips: ["127.0.0.1", "::1"]
+        roles: [administrator]
+        capabilities: [manage_options]
+
+    features:
+      metrics: true
+      validation: true
+      websocket: false
+      admin_ui: true
+
+    traits:
+      authentication:
+        enabled: true
+        api_keys: true
+        jwt: true
+        wp_auth: true
+        token:
+          algorithm: HS256
+          expiration: 3600
+          refresh_enabled: true
+
+      endpointManager:
+        enabled: true
+        permission_handling: true
+        bulk_registration: true
+        namespace_isolation: true
+
+      requestProcessor:
+        enabled: true
+        early_termination: true
+        timeout_handling: true
+        pipeline:
+          max_depth: 10
+          timeout: 30000
+
+      responseCache:
+        enabled: true
+        vary_headers: true
+        stale_while_revalidate: true
+        storage:
+          backend: valkey
+          prefix: "api_cache:"
+
+      rateLimiter:
+        enabled: true
+        ip_based: true
+        user_based: true
+        adaptive_throttling: true
+        storage:
+          backend: valkey
+          prefix: "rate_limit:"
+
+      validation:
+        enabled: true
+        json_schema: true
+        type_checking: true
+        sanitization: true
+        max_errors: 10
+
+      metricsCollector:
+        enabled: true
+        sample_rate: 1.0
+        anonymize_ip: true
+        retention:
+          raw: 3600
+          minute: 86400
+          hour: 604800
+
+      webSocket:
+        enabled: false
+
+  # -------------------------------------------------------------------------
+  # ErrorManager
+  # -------------------------------------------------------------------------
+  ErrorManager:
+    enabled: true
+    log_level: WARNING
+    channels:
+      - file
+      - storage
+    retention_days: 30
+
+  # -------------------------------------------------------------------------
+  # TemplateManager
+  # -------------------------------------------------------------------------
+  TemplateManager:
+    enabled: true
+    engine: tera
+    cache:
+      enabled: true
+      ttl: 7200
+    csrf_protection: true
+    htmx_fragments: true
+
+  # -------------------------------------------------------------------------
+  # SEOManager
+  # -------------------------------------------------------------------------
+  SEOManager:
+    enabled: true
+    opengraph: true
+    twitter_cards: true
+    schema_org: true
+    sitemap: true
+    cache_ttl: 3600
+
+  # -------------------------------------------------------------------------
+  # OptimizationManager
+  # -------------------------------------------------------------------------
+  OptimizationManager:
+    enabled: true
+    lazy_loading: true
+    preloading: true
+    minification:
+      html: true
+      css: true
+      js: false  # Can break scripts
+    compression:
+      enabled: true
+      threshold: 1024
+
+  # -------------------------------------------------------------------------
+  # ManifestManager
+  # -------------------------------------------------------------------------
+  ManifestManager:
+    enabled: true
+    pwa_support: true
+    icons: true
+    cache_ttl: 86400
+
+  # -------------------------------------------------------------------------
+  # CookieManager
+  # -------------------------------------------------------------------------
+  CookieManager:
+    enabled: true
+    secure: true
+    httponly: true
+    samesite: Lax
+    encryption: true
+    gdpr_compliance: true
+
+  # -------------------------------------------------------------------------
+  # MetricsManager
+  # -------------------------------------------------------------------------
+  MetricsManager:
+    enabled: true
+    track_performance: true
+    slow_threshold_ms: 100
+    report_interval: 300
+
+  # -------------------------------------------------------------------------
+  # ResourceManager
+  # -------------------------------------------------------------------------
+  ResourceManager:
+    enabled: true
+    distributed: true
+    cache_assets: true
+
+# =============================================================================
+# §8 TOPOLOGY SETTINGS
+# =============================================================================
+topology:
+  dimensions: 19
+  hash_grid_size: 10
+
+# =============================================================================
+# §9 GLOBAL TRAITS (Cross-cutting concerns)
+# =============================================================================
+traits:
+  AdvancedLoggingTrait:
+    enabled: true
+    level: WARNING
+    channels: [file, storage]
+
+  NotificationTrait:
+    enabled: true
+    channels: [email]
+
+  ScriptHandlingTrait:
+    enabled: true

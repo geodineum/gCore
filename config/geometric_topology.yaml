@@ -1,0 +1,588 @@
+# Geometric Topology Configuration
+# This file defines the configuration for the Rust-based geometric topology engine.
+# UPDATED: 2026-02-08 - Aligned with daemon's 23 semantic dimensions (19 discovery + 4 storage-only)
+
+# Library configuration
+library:
+  path: "${GCORE_LIB_PATH:-lib/libgeometric_topology.so}"
+  enabled: true
+  use_for_bootstrap: true
+  fallback_supported: true
+
+# Daemon configuration (for gNode mode)
+daemon:
+  enabled: true
+  path: "${GNODE_DAEMON_PATH:-/opt/geodineum/gnode-daemon/gnode-daemon}"
+  stream_prefix: "gnode"
+  auto_start: true
+  timeout: 5.0
+  retry_attempts: 3
+  retry_delay: 0.5
+  use_fallback: true
+  cache_expiration: 300
+  debug: false
+
+# Use the external gNode client from /opt/gNode-Client (Composer-installed)
+external_client:
+  enabled: true
+  path: "${GNODE_CLIENT_PATH:-/opt/geodineum/gNode-Client}"
+
+# Capability space configuration - 23 semantic dimensions (19 discovery + 4 storage-only)
+# See: daemon/functions/gnode_topology.lua for dimension definitions
+dimensions: 23
+capability_dimensions:
+  # Layer 1: Interface Identity (0-3)
+  protocol: 0           # http_rest|graphql|grpc|websocket|gnode_stream|resp3_direct|amqp|kafka|custom_tcp
+  native_format: 1      # plaintext|json|xml|yaml|msgpack|protobuf|cbor|resp3|custom_binary
+  api_version: 2        # Numeric: 0.0-1.0 (version semver normalized)
+  contract_stability: 3 # experimental|alpha|beta|stable|frozen
+
+  # Layer 2: Access Control (4-6)
+  clearance_required: 4 # public|authenticated|authorized|privileged|confidential|classified
+  auth_method: 5        # none|api_key|bearer_token|session_cookie|mtls|hardware_token
+  data_sensitivity: 6   # public_data|internal|confidential|pii|regulated
+
+  # Layer 3: Service Scope (7)
+  service_scope: 7      # infrastructure|daemon|worker|cron_scheduled|internal_api|bff|client_facing|edge
+
+  # Layer 4: Functional Domain (8-10)
+  domain_primary: 8     # platform|identity|configuration|storage|cache|compute|transform|messaging|workflow|template|content|gateway|integration|analytics|logging|ml_inference|search|notification|presentation
+  domain_secondary: 9   # Same as domain_primary (optional secondary domain)
+  specialization: 10    # platform|generalist|focused|specialist|single_purpose
+
+  # Layer 5: Performance Profile (11-13)
+  throughput_tier: 11   # minimal|standard|professional|enterprise|hyperscale
+  latency_class: 12     # realtime|interactive|responsive|patient|batch
+  reliability_tier: 13  # best_effort|standard|high|critical|ultra
+
+  # Layer 6: Workflow Context (14-15)
+  pipeline_stage: 14    # source|ingest|process|enrich|deliver|sink
+  execution_priority: 15 # background|low|normal|high|critical
+
+  # Layer 7: Runtime State (16) - Dynamic
+  current_load: 16      # idle|light|moderate|heavy|saturated
+
+  # Layer 8: Classification (17-18)
+  service_tier: 17      # tool|service|pipeline|infrastructure|orchestrator
+  environment: 18       # global|testing|staging|acceptance|production
+
+  # Layer 9: Visual Topology (19-21) - Storage-only, user-set positioning
+  user_x: 19            # 0.0-1.0 horizontal position for graph rendering
+  user_y: 20            # 0.0-1.0 vertical position for graph rendering
+  user_z: 21            # 0.0-1.0 depth position for graph rendering
+
+  # Layer 10: Temporal (22) - Storage-only, auto-injected by Lua
+  registration_order: 22 # Monotonic counter normalized to 0.0-1.0
+
+
+# Service tier mapping (for compatibility with old topology_tier)
+# ROME=0.0, TOOL=0.1, SERVICE=0.2
+# Now use: service_scope dimension instead
+
+# Services with their capability vectors using semantic dimension names
+services:
+  - id: "GeometricTopology"
+    metadata:
+      class: "gCore\\Modules\\Core\\Adapters\\Topology\\GeometricTopologyAdapter"
+      description: "Geometric topology adapter for capability-based service discovery"
+      type: "adapter"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "platform"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "critical"
+      - name: "service_scope"
+        value: "daemon"
+
+  - id: "SecurityManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\SecurityManager\\SecurityManager"
+      description: "Security manager for authentication and authorization"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authorized"
+      - name: "auth_method"
+        value: "session_cookie"
+      - name: "data_sensitivity"
+        value: "confidential"
+      - name: "domain_primary"
+        value: "identity"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "critical"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "CacheManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\CacheManager\\CacheManager"
+      description: "Cache manager for distributed caching"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "msgpack"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "cache"
+      - name: "specialization"
+        value: "specialist"
+      - name: "throughput_tier"
+        value: "enterprise"
+      - name: "latency_class"
+        value: "interactive"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "ErrorManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\ErrorManager\\ErrorManager"
+      description: "Error manager for error handling and logging"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "logging"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "APIManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\APIManager\\APIManager"
+      description: "API manager for REST API endpoints"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "auth_method"
+        value: "bearer_token"
+      - name: "domain_primary"
+        value: "gateway"
+      - name: "specialization"
+        value: "generalist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "latency_class"
+        value: "interactive"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "security_rules_trait"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\SecurityManager\\Traits\\SecurityRulesTrait"
+      description: "Security rules for application security"
+      type: "trait"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authorized"
+      - name: "data_sensitivity"
+        value: "confidential"
+      - name: "domain_primary"
+        value: "identity"
+      - name: "domain_secondary"
+        value: "configuration"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "critical"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "TemplateManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\TemplateManager\\TemplateManager"
+      description: "Template rendering with Tera engine, forms, and HTMX fragments"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "template"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "FormatManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\FormatManager\\FormatManager"
+      description: "Data format detection, conversion, and validation"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "transform"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "TopologyManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\TopologyManager\\TopologyManager"
+      description: "Geometric service discovery and capability vectors"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "platform"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "critical"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "SEOManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\SEOManager\\SEOManager"
+      description: "SEO optimization, OpenGraph, Twitter Cards, Schema.org"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "content"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "OptimizationManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\OptimizationManager\\OptimizationManager"
+      description: "Asset optimization, lazy loading, preloading, compression"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "compute"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "ManifestManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\ManifestManager\\ManifestManager"
+      description: "Web app manifests, PWA support, icons"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "content"
+      - name: "domain_secondary"
+        value: "presentation"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "standard"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "CookieManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\CookieManager\\CookieManager"
+      description: "Secure cookie management with encryption and validation"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authorized"
+      - name: "data_sensitivity"
+        value: "pii"
+      - name: "domain_primary"
+        value: "identity"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "StateManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\StateManager\\StateManager"
+      description: "Distributed state management with ValKey-backed persistence"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "storage"
+      - name: "specialization"
+        value: "specialist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "WordPressManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\WordPressManager\\WordPressManager"
+      description: "WordPress environment management and GDPR-compliant PII scrubbing"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "integration"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "standard"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "MetricsManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\MetricsManager\\MetricsManager"
+      description: "Thin PHP interface to read ValKey metrics tracked by Lua scripts"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "analytics"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "standard"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "ResourceManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\ResourceManager\\ResourceManager"
+      description: "Distributed resource and asset management"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "storage"
+      - name: "domain_secondary"
+        value: "content"
+      - name: "specialization"
+        value: "generalist"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "VersionManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\VersionManager\\VersionManager"
+      description: "Version management and compatibility checks"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "configuration"
+      - name: "specialization"
+        value: "focused"
+      - name: "reliability_tier"
+        value: "standard"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "AssetManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\AssetManager\\AssetManager"
+      description: "CMS-agnostic asset management with manifest-driven bundling via gNode"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "gnode_stream"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "authenticated"
+      - name: "domain_primary"
+        value: "content"
+      - name: "domain_secondary"
+        value: "storage"
+      - name: "specialization"
+        value: "specialist"
+      - name: "throughput_tier"
+        value: "professional"
+      - name: "reliability_tier"
+        value: "high"
+      - name: "service_scope"
+        value: "internal_api"
+
+  - id: "InstallManager"
+    metadata:
+      class: "gCore\\Modules\\Managers\\Base\\InstallManager\\InstallManager"
+      description: "Installation and setup management"
+      type: "manager"
+      tier: "TOOL"
+    capabilities:
+      - name: "protocol"
+        value: "http_rest"
+      - name: "native_format"
+        value: "json"
+      - name: "contract_stability"
+        value: "stable"
+      - name: "clearance_required"
+        value: "privileged"
+      - name: "domain_primary"
+        value: "configuration"
+      - name: "specialization"
+        value: "single_purpose"
+      - name: "reliability_tier"
+        value: "standard"
+      - name: "service_scope"
+        value: "internal_api"

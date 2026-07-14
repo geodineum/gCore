@@ -1,0 +1,212 @@
+---
+# SecurityManager Configuration Schema
+type: object
+required:
+  - enabled
+  - implementation
+properties:
+  enabled:
+    type: boolean
+    description: "Whether the security manager is enabled"
+  
+  implementation:
+    type: string
+    enum: [standalone, wordpress, distributed]
+    description: "Security manager implementation type"
+  
+  firewall:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: "Whether the firewall is enabled"
+      mode:
+        type: string
+        enum: [detection, prevention, learning]
+        default: prevention
+        description: "Firewall operation mode"
+      rules_path:
+        type: string
+        description: "Path to firewall rules file"
+      ip_blacklist:
+        type: array
+        items:
+          type: string
+          pattern: "^(?:\\d{1,3}\\.){3}\\d{1,3}(?:/\\d{1,2})?$"
+        description: "List of IP addresses/ranges to block"
+      ip_whitelist:
+        type: array
+        items:
+          type: string
+          pattern: "^(?:\\d{1,3}\\.){3}\\d{1,3}(?:/\\d{1,2})?$"
+        description: "List of IP addresses/ranges to allow"
+      rate_limits:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+            description: "Whether rate limiting is enabled"
+          requests_per_minute:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 60
+            description: "Maximum requests per minute per IP"
+          burst:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 10
+            description: "Allowed request burst"
+        description: "Rate limiting configuration"
+    description: "Firewall configuration"
+  
+  encryption:
+    type: object
+    properties:
+      cipher:
+        type: string
+        enum: [aes-256-gcm, aes-256-cbc, chacha20-poly1305]
+        default: aes-256-gcm
+        description: "Encryption cipher"
+      key_rotation:
+        type: boolean
+        default: false
+        description: "Whether key rotation is enabled"
+      rotation_interval:
+        type: integer
+        minimum: 1
+        maximum: 365
+        default: 30
+        description: "Key rotation interval in days"
+    description: "Encryption configuration"
+  
+  auditing:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: "Whether auditing is enabled"
+      log_level:
+        type: string
+        enum: [debug, info, notice, warning, error, critical]
+        default: info
+        description: "Audit log level"
+      storage:
+        type: string
+        enum: [file, database, valkey]
+        default: file
+        description: "Audit log storage type"
+      retention:
+        type: integer
+        minimum: 1
+        maximum: 365
+        default: 90
+        description: "Audit log retention in days"
+    description: "Auditing configuration"
+  
+  authentication:
+    type: object
+    properties:
+      mfa:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: false
+            description: "Whether MFA is enabled"
+          methods:
+            type: array
+            items:
+              type: string
+              enum: [totp, email, sms, webauthn]
+            default: [totp]
+            description: "Allowed MFA methods"
+          required_for:
+            type: array
+            items:
+              type: string
+              enum: [all, admin, sensitive]
+            default: [admin]
+            description: "Roles requiring MFA"
+        description: "Multi-factor authentication configuration"
+      
+      session:
+        type: object
+        properties:
+          timeout:
+            type: integer
+            minimum: 60
+            maximum: 86400
+            default: 3600
+            description: "Session timeout in seconds"
+          regenerate_id:
+            type: boolean
+            default: true
+            description: "Whether to regenerate session ID periodically"
+          secure:
+            type: boolean
+            default: true
+            description: "Whether to use secure cookies"
+          httponly:
+            type: boolean
+            default: true
+            description: "Whether to use HttpOnly cookies"
+        description: "Session configuration"
+    description: "Authentication configuration"
+  
+  traits:
+    type: object
+    properties:
+      crypto:
+        type: boolean
+        default: true
+        description: "Whether crypto trait is enabled"
+      sanitization:
+        type: boolean
+        default: true
+        description: "Whether sanitization trait is enabled"
+      securityRules:
+        type: boolean
+        default: true
+        description: "Whether security rules trait is enabled"
+      securityMonitoring:
+        type: boolean
+        default: true
+        description: "Whether security monitoring trait is enabled"
+      advancedAuthentication:
+        type: boolean
+        default: false
+        description: "Whether advanced authentication trait is enabled"
+      advancedCrypto:
+        type: boolean
+        default: false
+        description: "Whether advanced crypto trait is enabled"
+      advancedRules:
+        type: boolean
+        default: false
+        description: "Whether advanced rules trait is enabled"
+      alerting:
+        type: boolean
+        default: false
+        description: "Whether alerting trait is enabled"
+      headerSecurity:
+        type: boolean
+        default: true
+        description: "Whether header security trait is enabled"
+      wordpressIntegration:
+        type: boolean
+        default: false
+        description: "Whether WordPress integration trait is enabled"
+      xssPrevention:
+        type: boolean
+        default: true
+        description: "Whether XSS prevention trait is enabled"
+      hardwareSecurity:
+        type: boolean
+        default: false
+        description: "Whether hardware security trait is enabled"
+    description: "Security manager traits configuration"

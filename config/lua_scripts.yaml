@@ -1,0 +1,26 @@
+lua_scripts:
+  limits:
+    batch:
+      max_size: 1000
+      max_key_length: 256
+      max_value_size: 524288  # 512KB
+      max_total_size: 1048576 # 1MB
+    quota:
+      max_size: 1099511627776 # 1TB
+    metrics:
+      max_entry_size: 1048576  # 1MB
+      max_metric_size: 5242880 # 5MB
+    patterns:
+      key: "^[a-zA-Z0-9:_-]+$"
+  timeouts:
+    locks:
+      timeout: 30
+      retry_count: 3
+      retry_delay: 100
+    transactions:
+      timeout: 30
+    circuit_breaker:
+      reset: 300
+  streams:
+    batch_size: 100
+    block_timeout: 1000

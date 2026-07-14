@@ -1,0 +1,77 @@
+# WordPress Environment Configuration
+# This file provides WordPress-specific configuration settings for gCore
+
+# Core settings
+core:
+  environment: wordpress
+  debug: auto  # auto uses WP_DEBUG value
+  min_php_version: 7.2  # Support older PHP versions in WordPress
+  compatibility_mode: true  # Enable compatibility features for older PHP
+  site_id: auto  # auto uses site ID from WordPress
+
+# Performance tuning
+performance:
+  object_cache: true  # Use WordPress object cache when available
+  transient_fallback: true  # Fall back to WP transients when object cache unavailable
+  batch_size: 50  # Smaller batch sizes for WordPress admin
+  connection_timeout: 5  # Shorter timeout for WordPress hosting
+  use_wp_cron: true  # Use WordPress cron for scheduled tasks
+  prefetch_enabled: false  # Disable prefetch for better compatibility
+
+# WordPress integration
+wordpress:
+  role_mapping:
+    administrator: 
+      role: administrator
+      capabilities: [manage_options]
+    editor:
+      role: editor
+      capabilities: [edit_pages]
+    author:
+      role: author
+      capabilities: [edit_posts]
+  hooks:
+    enable_plugin_hooks: true
+    disable_direct_db: true  # Use $wpdb instead of direct database connections
+    admin_init: true
+    wp_loaded: true
+    admin_menu: true
+  capability_check:
+    primary_capability: manage_options
+    menu_capability: manage_options
+    api_capability: edit_pages
+    
+# PHP compatibility
+php_compatibility:
+  typed_properties: false  # Disable PHP 7.4+ typed properties
+  arrow_functions: false  # Disable PHP 7.4+ arrow functions
+  null_coalesce_assign: false  # Disable PHP 7.4+ null coalesce assignment
+  use_polyfills: true  # Use polyfills for newer PHP features
+  strict_types: false  # Don't use strict type declarations
+  return_type_declarations: simple  # Only use simple return type declarations
+  type_hints: 
+    enabled: true
+    nullable: false  # Don't use nullable type hints in older PHP
+    scalar_types: true
+
+# Storage and caching
+storage:
+  table_prefix: auto  # Use WordPress table prefix
+  options_prefix: gcore_
+  transient_prefix: gcore_
+  use_wp_uploads: true  # Store files in the WordPress uploads directory
+  
+# Error handling
+error_handling:
+  use_wp_error: true  # Use WP_Error for error handling
+  show_in_admin: true
+  admin_capability: manage_options
+  log_to_debug_log: true
+  
+# Security
+security:
+  verify_nonces: true
+  check_capabilities: true
+  use_wp_roles: true
+  sanitize_with_wp: true # Use WordPress sanitization functions
+  use_wp_kses: true # Use wp_kses for HTML sanitization

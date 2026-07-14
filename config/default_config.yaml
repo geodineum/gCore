@@ -1,0 +1,102 @@
+core:
+  environment: production
+  debug: false
+  log_path: "${GCORE_LOG_PATH:-/var/log/geodineum/gcore}"
+  version: 0.1.0
+  minimum_supported_version: 0.1.0
+  automatic_initialization: true
+  site_id: site1
+  service:
+    host: "${GCORE_SERVICE_HOST:-0.0.0.0}"
+    port: 8080
+    protocol: https  # Changed to HTTPS by default
+
+# Core feature flags
+features:
+  valkey: true
+  distributed_cache: true
+  microservices: false
+  advanced_metrics: false
+  security:
+    advanced_protection: true
+    zero_trust: true
+    adaptive_security: true
+    runtime_protection: true
+    auto_patching: true
+
+# Core boundaries
+boundaries:
+  max_string_length: 1048576
+  max_array_depth: 5
+  max_file_size: 5242880
+  allowed_mime_types: [image/jpeg, image/png, image/gif]
+  blocked_tags: [script, iframe, object, embed, form, svg, math, meta, link, base]
+  file_upload:
+    enabled: true
+    max_size: 2097152  # 2MB
+    allowed_mime_types: [image/jpeg, image/png, image/gif, application/pdf]
+    sanitize_filenames: true
+    verify_mime_type: true
+    store_outside_webroot: true
+
+# Core metrics
+metrics:
+  enabled: true
+  window: 300
+  collection:
+    performance: true
+    security: true
+    cache: true
+    errors: true
+
+# Security settings
+security:
+  encryption:
+    algorithm: AES-256-GCM
+    key_rotation_days: 30
+    use_hardware_security: true
+  authentication:
+    require_2fa: true
+    password_min_length: 14
+    brute_force_protection: true
+    session_lifetime: 1800
+  protection:
+    xss_prevention: true
+    csrf_protection: true
+    header_security: true
+    sql_injection_prevention: true
+    file_protection: true
+  monitoring:
+    alert_suspicious_activity: true
+    log_security_events: true
+    real_time_monitoring: true
+
+# Trait Configuration
+traits:
+  AdvancedLoggingTrait:
+    enabled: true
+    level: WARNING
+    channels: 
+      - file
+      - storage
+  NotificationTrait:
+    enabled: true
+    channels:
+      - email
+  ScriptHandlingTrait:
+    enabled: true
+  XSSPreventionTrait:
+    enabled: true
+    config_path: traits/SecurityManager/xssPrevention.yaml
+  HardwareSecurityTrait:
+    enabled: true
+    config_path: traits/SecurityManager/hardwareSecurity.yaml
+  WordPressIntegrationTrait:
+    enabled: true
+    config_path: traits/SecurityManager/wordpressIntegration.yaml
+  HeaderSecurityTrait:
+    enabled: true
+    config_path: traits/SecurityManager/headerSecurity.yaml
+  SecurityRulesTrait:
+    enabled: true
+    config_path: traits/SecurityManager/securityRules.yaml

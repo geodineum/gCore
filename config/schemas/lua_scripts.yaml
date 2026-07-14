@@ -1,0 +1,182 @@
+---
+# Schema for lua_scripts.yaml configuration
+type: object
+required:
+  - scripts
+properties:
+  scripts:
+    type: object
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        $ref: "#/definitions/script"
+    minProperties: 1
+    description: "Collection of Lua scripts for ValKey/Redis operations"
+    
+  functions:
+    type: object
+    patternProperties:
+      "^[a-zA-Z0-9_]+$":
+        $ref: "#/definitions/function"
+    description: "Collection of Redis Functions for Redis 7.0+ servers"
+    
+  load_strategy:
+    type: string
+    enum: [eager, lazy, on_demand]
+    default: eager
+    description: "Script loading strategy: eager (all at startup), lazy (when needed), on_demand (always reload)"
+    
+  use_functions_api:
+    type: boolean
+    default: true
+    description: "Whether to use Redis FUNCTION API (Redis 7.0+) instead of SCRIPT"
+    
+  function_library:
+    type: string
+    pattern: "^[a-zA-Z0-9_]+$"
+    default: "gcore"
+    description: "Name of the Redis function library for FUNCTION API"
+    
+  script_paths:
+    type: array
+    items:
+      type: string
+    description: "Additional paths to look for Lua script files"
+    
+  validation:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: "Whether to validate scripts for syntax errors before loading"
+        
+      max_length:
+        type: integer
+        minimum: 1024
+        maximum: 1048576
+        default: 102400
+        description: "Maximum allowed script length in bytes"
+        
+      check_reserved_keys:
+        type: boolean
+        default: true
+        description: "Check for usage of reserved key patterns"
+        
+      forbidden_commands:
+        type: array
+        items:
+          type: string
+        description: "Redis commands that are not allowed in scripts"
+    description: "Script validation settings"
+
+definitions:
+  script:
+    type: object
+    required:
+      - keys
+      - args
+      - script
+    properties:
+      keys:
+        type: integer
+        minimum: 0
+        description: "Number of Redis keys used by the script"
+        
+      args:
+        type: integer
+        minimum: 0
+        description: "Number of additional arguments used by the script"
+        
+      script:
+        type: string
+        minLength: 1
+        description: "Inline Lua script or path to script file (starting with @)"
+        
+      description:
+        type: string
+        description: "Description of what the script does"
+        
+      flags:
+        type: array
+        items:
+          type: string
+          enum: [no-writes, allow-oom, no-cluster, allow-stale, no-auth]
+        description: "Script flags for Redis 7.0+ FUNCTION API"
+        
+      sha1:
+        type: string
+        pattern: "^[0-9a-f]{40}$"
+        description: "Pre-computed SHA1 hash of the script for optimization"
+        
+      timeout:
+        type: integer
+        minimum: 0
+        maximum: 60000
+        default: 5000
+        description: "Script execution timeout in milliseconds"
+        
+      testing:
+        type: object
+        properties:
+          test_cases:
+            type: array
+            items:
+              type: object
+              properties:
+                keys:
+                  type: array
+                  items:
+                    type: string
+                  description: "Test keys to use in this test case"
+                  
+                args:
+                  type: array
+                  items:
+                    type: string
+                  description: "Test arguments to use in this test case"
+                  
+                expected:
+                  description: "Expected result from the script execution"
+                  
+                setup:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+                    description: "Redis command to execute before the test"
+                  description: "Redis commands to set up test data"
+                  
+                cleanup:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+                    description: "Redis command to execute after the test"
+                  description: "Redis commands to clean up test data"
+                  
+              required: [keys, args, expected]
+            description: "Test cases for script verification"
+        description: "Script testing configuration"
+    
+  function:
+    type: object
+    required:
+      - code
+    properties:
+      code:
+        type: string
+        minLength: 1
+        description: "Inline Lua function or path to function file (starting with @)"
+        
+      description:
+        type: string
+        description: "Description of what the function does"
+        
+      flags:
+        type: array
+        items:
+          type: string
+          enum: [no-writes, allow-oom, no-cluster, allow-stale, no-auth]
+        description: "Function flags for Redis FUNCTION API"

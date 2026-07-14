@@ -1,0 +1,179 @@
+# =============================================================================
+# ErrorManager - Unified Configuration
+# =============================================================================
+# CONSOLIDATED: managers/ErrorManager.yaml + 3 trait configs
+# Version: 2.0.0 (Unified)
+#
+# This file is the SINGLE SOURCE OF TRUTH for ErrorManager configuration.
+# All trait configurations are embedded inline under the 'traits' section.
+#
+# Trait Dependencies:
+#   - notification → advancedLogging (for error context)
+#   - scriptHandling → (none, standalone ValKey scripts)
+# =============================================================================
+
+enabled: true
+implementation: standalone
+
+adapters:
+  logger:
+    standalone: gCore\Modules\Core\Adapters\Logging\StandaloneErrorLogger
+  notifier:
+    standalone: gCore\Modules\Core\Adapters\Capability\StandaloneErrorNotifier
+  storage:
+    standalone: gCore\Modules\Core\Adapters\Storage\ValKeyStorage
+
+# =============================================================================
+# CORE CONFIGURATION
+# =============================================================================
+config:
+  debug: false
+  log_level: warning
+  log_path: "${GCORE_LOG_PATH:-/var/log/geodineum/gcore}/error.log"
+  log_rotation_size: 5242880
+  log_retention_days: 30
+  notify_admin: true
+  error_categories: [system, security, cache]
+  compression_level: 9
+
+  reporting:
+    level: 32767
+    display: false
+    admin_notification: true
+
+  notifications:
+    email: null
+    email_threshold: CRITICAL
+    rate_limit_window: 3600
+    rate_limit_threshold: 50
+
+# =============================================================================
+# TRAITS CONFIGURATION
+# =============================================================================
+traits:
+
+  # ---------------------------------------------------------------------------
+  # ADVANCED LOGGING - Extended logging capabilities
+  # ---------------------------------------------------------------------------
+  advancedLogging:
+    enabled: true
+    capabilities:
+      logging: 1.0
+      error_tracking: 0.9
+      context_capture: 0.8
+      trace_analysis: 0.7
+
+    level: WARNING
+    channels:
+      - file
+      - storage
+    format: json
+    include_context: true
+    include_trace: true
+
+    rotation:
+      enabled: true
+      max_files: 10
+      max_size: 10485760  # 10MB
+      compress: true
+
+    storage:
+      backend: valkey
+      key_prefix: "error_log:"
+      retention_days: 30
+
+  # ---------------------------------------------------------------------------
+  # NOTIFICATION - Error notification and alerting
+  # ---------------------------------------------------------------------------
+  notification:
+    enabled: true
+    depends_on: [advancedLogging]
+    capabilities:
+      notification: 1.0
+      alerting: 0.9
+      deduplication: 0.8
+      routing: 0.7
+
+    channels:
+      - email
+
+    rate_limit:
+      enabled: true
+      window: 3600
+      thresholds:
+        CRITICAL: 10
+        ERROR: 5
+        WARNING: 2
+        default: 1
+
+    deduplication:
+      enabled: true
+      window: 600
+      fields:
+        - message
+        - type
+        - file
+        - line
+
+    recipients:
+      admin: "${ERROR_NOTIFICATION_EMAIL:-admin@example.com}"
+      developers:
+        - "${DEV_EMAIL:-dev@example.com}"
+      operations:
+        - "${OPS_EMAIL:-ops@example.com}"
+
+    templates:
+      email:
+        subject: '[{site_id}] {severity} Error: {message_short}'
+        html: true
+      slack:
+        enabled: false
+        webhook_url: null
+        channel: "#errors"
+
+    escalation:
+      enabled: false
+      rules:
+        - severity: CRITICAL
+          delay_minutes: 5
+          escalate_to: operations
+        - severity: ERROR
+          delay_minutes: 15
+          escalate_to: developers
+
+  # ---------------------------------------------------------------------------
+  # SCRIPT HANDLING - ValKey Lua script execution
+  # ---------------------------------------------------------------------------
+  scriptHandling:
+    enabled: true
+    capabilities:
+      script_execution: 1.0
+      retry_logic: 0.9
+      performance_monitoring: 0.8
+
+    retry_attempts: 3
+    retry_delay_ms: 100
+    monitor_performance: true
+
+    scripts:
+      - STREAM_ADD
+      - RATE_LIMIT
+      - HINCRBY
+      - ZCOUNT
+      - SET_NX
+      - HEALTH_UPDATE
+      - HEALTH_GET
+      - SET
+      - GET
+      - LOCK_ACQUIRE
+      - LOCK_RELEASE
+
+    performance:
+      track_execution_time: true
+      alert_threshold_ms: 100
+      log_slow_scripts: true
+
+    fallback:
+      enabled: true
+      use_native_commands: true
+

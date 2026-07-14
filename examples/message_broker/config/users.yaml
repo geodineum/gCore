@@ -1,0 +1,12 @@
+users:
+  admin_user:
+    role: admin
+    api_key: admin-key-example
+  
+  publisher_user:
+    role: publisher
+    api_key: pub-key-example
+  
+  consumer_user:
+    role: consumer
+    api_key: cons-key-example

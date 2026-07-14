@@ -1,0 +1,84 @@
+# gCore — config_schema
+#
+# Published at install time via the `geodineum` CLI one-shot AND on every
+# gCore-WP bootstrap (idempotent). gCore is the home of the wp-admin
+# schemas panel, so it publishes its own config_schema as a self-
+# documenting act.
+
+component: gcore
+entries:
+  - key: GCORE_ENV
+    type: enum
+    default: production
+    mutable: false
+    values: [dev, tst, acc, prd, production]
+    description: Environment tag. Drives DTAP auto-detection + viewkey gate.
+
+  - key: GCORE_DEBUG
+    type: bool
+    default: false
+    mutable: true
+    capability: manage_options
+    description: Enables verbose error pages and extra logging.
+
+  - key: GCORE_DISPLAY_ERRORS
+    type: bool
+    default: false
+    mutable: true
+    capability: manage_options
+    description: >-
+      PHP display_errors gate. Must be false in production; gate is
+      enforced by bootstrap.php regardless of this value when GCORE_ENV
+      is production.
+
+  - key: GCORE_BASE_PATH
+    type: path
+    default: /opt/geodineum/pro/gCore
+    mutable: false
+    description: gCore installation root.
+
+  - key: GCORE_CONFIG_PATH
+    type: path
+    default: /etc/geodineum
+    mutable: false
+    description: Ecosystem config root.
+
+  - key: GCORE_CACHE_PATH
+    type: path
+    default: /var/cache/geodineum/gcore
+    mutable: false
+    description: gCore cache directory.
+
+  - key: GCORE_LOG_PATH
+    type: path
+    default: /var/log/geodineum/gcore
+    mutable: false
+    description: gCore log directory.
+
+  - key: GCORE_EXTENSIONS_DIR
+    type: path
+    default: /opt/geodineum/pro/gCore/Modules
+    mutable: false
+    description: Path to gCore Modules (extension tree).
+
+  - key: GCORE_CACHE_AUTH
+    type: bool
+    default: true
+    mutable: true
+    description: >-
+      Toggle authentication-aware caching. When true, cache keys include
+      a logged-in-vs-anon discriminator.
+
+  - key: GCORE_MIN_VERSION
+    type: string
+    default: "7.4"
+    mutable: false
+    description: Minimum supported PHP version (enforced by bootstrap).
+
+  - key: GCORE_SITE_ID
+    type: string
+    default: ""
+    mutable: false
+    description: >-
+      Per-site identifier. Populated at site-register time; read by
+      every ValKey key-constructor for hash-tag brace-literal form.
