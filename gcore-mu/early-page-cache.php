@@ -195,9 +195,18 @@ function gcore_early_cache_serve(): void {
                 header('X-Cache: HIT-EARLY');
                 header('X-Cache-Age: ' . (time() - $cached_at));
 
-                // Send cached headers if any
+                // Replay cached headers, minus the ones this path already owns.
+                // The captured set comes from the ORIGINAL uncached render, so it
+                // still carries WordPress's Cache-Control: max-age=0 - replaying
+                // that undoes the max-age=60 set above and browsers refetch the
+                // page on every view instead of using the cache window.
                 if (!empty($data['headers'])) {
+                    $owned = ['cache-control', 'expires', 'pragma', 'etag', 'content-type', 'x-cache', 'x-cache-age'];
                     foreach ($data['headers'] as $header) {
+                        $name = strtolower(trim(strtok($header, ':')));
+                        if (in_array($name, $owned, true)) {
+                            continue;
+                        }
                         header($header);
                     }
                 }
