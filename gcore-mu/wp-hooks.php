@@ -402,9 +402,10 @@ function gcore_fetch_component_health(): array {
     }
 
     // Writer and reader can resolve the env string differently (e.g. Geodine
-    // defaults to 'testing'); check the resolved env then production, taking
-    // the freshest key found so a mismatch never shows a false "down".
-    $envs = array_values(array_unique([$env, 'production']));
+    // defaults to 'testing', the gNode daemon serves every env as 'all');
+    // check the resolved env, production, then 'all', taking the freshest key
+    // found so a mismatch never shows a false "down".
+    $envs = array_values(array_unique([$env, 'production', 'all']));
 
     // The daemons that emit heartbeats. Keyed under {geodineum} to match every
     // writer's GNODE_TOPOLOGY_NAMESPACE default (and the topology key already
