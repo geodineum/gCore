@@ -592,7 +592,10 @@ managers:
 # §8 TOPOLOGY SETTINGS
 # =============================================================================
 topology:
-  dimensions: 19
+  # Source of truth is gNode/daemon/config/service_schema.yaml (30 total,
+  # 25 discovery) and the daemon publishes it to {ns}:gnode:schema:<tier>.
+  # Nothing reads this key; it is kept in step so it cannot mislead.
+  dimensions: 30
   hash_grid_size: 10
 
 # =============================================================================

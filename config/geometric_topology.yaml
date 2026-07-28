@@ -27,59 +27,48 @@ external_client:
   enabled: true
   path: "${GNODE_CLIENT_PATH:-/opt/geodineum/gNode-Client}"
 
-# Capability space configuration - 23 semantic dimensions (19 discovery + 4 storage-only)
-# See: daemon/functions/gnode_topology.lua for dimension definitions
-dimensions: 23
+# Capability space — 30 semantic dimensions (25 discovery + 5 storage-only).
+#
+# GENERATED from gNode/daemon/config/service_schema.yaml, which is the only
+# source of truth. The daemon also publishes it to {ns}:gnode:schema:service
+# at startup, so a running system can be asked rather than trusted.
+#
+# Do not hand-edit. This block sat at 23 dimensions with six indices pointing
+# at the wrong slot for long enough that four other copies inherited it.
+dimensions: 30
+discovery_dimensions: 25
 capability_dimensions:
-  # Layer 1: Interface Identity (0-3)
-  protocol: 0           # http_rest|graphql|grpc|websocket|gnode_stream|resp3_direct|amqp|kafka|custom_tcp
-  native_format: 1      # plaintext|json|xml|yaml|msgpack|protobuf|cbor|resp3|custom_binary
-  api_version: 2        # Numeric: 0.0-1.0 (version semver normalized)
-  contract_stability: 3 # experimental|alpha|beta|stable|frozen
+  protocol: 0                     # undefined|http_rest|graphql|grpc|websocket|gnode_stream|resp3_direct|amqp|kafka|…
+  native_format: 1                # undefined|plaintext|json|xml|yaml|msgpack|protobuf|cbor|resp3|…
+  api_version: 2                  # v1|v2|v3|v4|v5
+  contract_stability: 3           # experimental|alpha|beta|stable|frozen
+  clearance_required: 4           # public|authenticated|authorized|privileged|confidential|classified
+  auth_method: 5                  # none|api_key|bearer_token|session_cookie|mtls|hardware_token
+  data_sensitivity: 6             # public_data|internal|confidential|pii|regulated
+  service_scope: 7                # infrastructure|daemon|worker|cron_scheduled|internal_api|bff|client_facing|edge
+  domain_primary: 8               # platform|identity|configuration|storage|cache|compute|transform|messaging|workflow|…
+  domain_secondary: 9             # platform|identity|configuration|storage|cache|compute|transform|messaging|workflow|…
+  specialization: 10              # platform|generalist|focused|specialist|single_purpose
+  throughput_tier: 11             # minimal|standard|professional|enterprise|hyperscale
+  latency_class: 12               # realtime|interactive|responsive|patient|batch
+  reliability_tier: 13            # best_effort|standard|high|critical|ultra
+  pipeline_stage: 14              # source|ingest|process|enrich|deliver|sink
+  execution_priority: 15          # background|low|normal|high|critical
+  current_load: 16                # idle|light|moderate|heavy|saturated
+  health_status: 17               # dead|degraded|healthy|unknown
+  lifecycle_state: 18             # registering|active|draining|stopped|failed
+  service_tier: 19                # tool|service|pipeline|infrastructure|orchestrator
+  environment: 20                 # global|testing|staging|acceptance|production
+  implementation_language: 21     # rust|php|lua|python|go|javascript|bash
+  network_zone: 22                # localhost|vpn|internal|dmz|public
+  data_persistence: 23            # stateless|ephemeral|persistent|replicated
+  update_channel: 24              # stable|beta|canary|pinned
+  user_x: 25                      # left|center|right
+  user_y: 26                      # bottom|middle|top
+  user_z: 27                      # back|center|front
+  deployment_model: 28            # bare_metal|container|serverless|embedded
+  registration_order: 29          # first|early|middle|late|recent
 
-  # Layer 2: Access Control (4-6)
-  clearance_required: 4 # public|authenticated|authorized|privileged|confidential|classified
-  auth_method: 5        # none|api_key|bearer_token|session_cookie|mtls|hardware_token
-  data_sensitivity: 6   # public_data|internal|confidential|pii|regulated
-
-  # Layer 3: Service Scope (7)
-  service_scope: 7      # infrastructure|daemon|worker|cron_scheduled|internal_api|bff|client_facing|edge
-
-  # Layer 4: Functional Domain (8-10)
-  domain_primary: 8     # platform|identity|configuration|storage|cache|compute|transform|messaging|workflow|template|content|gateway|integration|analytics|logging|ml_inference|search|notification|presentation
-  domain_secondary: 9   # Same as domain_primary (optional secondary domain)
-  specialization: 10    # platform|generalist|focused|specialist|single_purpose
-
-  # Layer 5: Performance Profile (11-13)
-  throughput_tier: 11   # minimal|standard|professional|enterprise|hyperscale
-  latency_class: 12     # realtime|interactive|responsive|patient|batch
-  reliability_tier: 13  # best_effort|standard|high|critical|ultra
-
-  # Layer 6: Workflow Context (14-15)
-  pipeline_stage: 14    # source|ingest|process|enrich|deliver|sink
-  execution_priority: 15 # background|low|normal|high|critical
-
-  # Layer 7: Runtime State (16) - Dynamic
-  current_load: 16      # idle|light|moderate|heavy|saturated
-
-  # Layer 8: Classification (17-18)
-  service_tier: 17      # tool|service|pipeline|infrastructure|orchestrator
-  environment: 18       # global|testing|staging|acceptance|production
-
-  # Layer 9: Visual Topology (19-21) - Storage-only, user-set positioning
-  user_x: 19            # 0.0-1.0 horizontal position for graph rendering
-  user_y: 20            # 0.0-1.0 vertical position for graph rendering
-  user_z: 21            # 0.0-1.0 depth position for graph rendering
-
-  # Layer 10: Temporal (22) - Storage-only, auto-injected by Lua
-  registration_order: 22 # Monotonic counter normalized to 0.0-1.0
-
-
-# Service tier mapping (for compatibility with old topology_tier)
-# ROME=0.0, TOOL=0.1, SERVICE=0.2
-# Now use: service_scope dimension instead
-
-# Services with their capability vectors using semantic dimension names
 services:
   - id: "GeometricTopology"
     metadata:

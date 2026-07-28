@@ -8,7 +8,7 @@ declare(strict_types=1);
  *
  * Extension implementations provide:
  * - Service mesh visualization in 3D space
- * - N-dimensional capability space (23 dimensions)
+ * - N-dimensional capability space (per tier; service is 30, published at {ns}:gnode:schema:service)
  * - Smart registration with hash-based idempotency
  * - Geometric service discovery
  * - Custom dimension registration

@@ -563,7 +563,8 @@ services:
 topology:
   manifold_dimensions: 12
   hash_grid_size: 10
-  capability_dimensions: 23  # From geometric_topology.yaml (19 discovery + 4 storage-only)
+  capability_dimensions: 30  # service tier: 25 discovery + 5 storage-only.
+                             # Truth: gNode/daemon/config/service_schema.yaml
 
 # =============================================================================
 # gNode PREMIUM BUNDLE REFERENCE

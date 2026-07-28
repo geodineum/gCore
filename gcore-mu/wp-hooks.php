@@ -1474,7 +1474,7 @@ function gcore_admin_topology_page(): void {
     ?>
     <div class="wrap">
         <h1><?php esc_html_e('Topology 3D Visualizer', 'gcore'); ?></h1>
-        <p class="description"><?php esc_html_e('Visualize the 23-dimensional service topology in 3D space. Select any 3 capability dimensions for the X, Y, and Z axes.', 'gcore'); ?></p>
+        <p class="description"><?php esc_html_e('Visualize the service topology in 3D space. Select any 3 capability dimensions for the X, Y, and Z axes.', 'gcore'); ?></p>
 
         <style>
             .topology-container { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
