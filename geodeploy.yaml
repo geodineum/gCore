@@ -14,7 +14,7 @@ triggers:
     actions: [php-fpm-restart]
 
 dirty-tree:
-  strategy: stash
+  strategy: discard
 
 cli:
   commands:
