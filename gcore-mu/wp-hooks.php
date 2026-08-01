@@ -417,24 +417,63 @@ function gcore_fetch_component_health(): array {
         'gshield'      => 'gShield',
     ];
 
+    // Node list from the constellation entities the daemons register at every
+    // start ({geodineum}:gnode:constellation:entities — one HGETALL, covered
+    // by the same ~{geodineum}:gnode:* grant, no SCAN). Heartbeat keys carry a
+    // node segment (CONTRACTS/heartbeat.md) precisely so this join can say
+    // WHICH node a component runs on; before it, every node wrote one key and
+    // a dead daemon hid behind a live one's fresh ts.
+    $nodes = [];
+    try {
+        $ents = $redis->hGetAll('{geodineum}:gnode:constellation:entities');
+        if (is_array($ents)) {
+            $nodes = array_keys($ents);
+        }
+    } catch (\Throwable $ex) {
+        $nodes = [];
+    }
+
     $now = time();
+    $extract_ts = static function ($val): ?int {
+        if ($val === false || $val === null) {
+            return null;
+        }
+        $dec = json_decode((string) $val, true);
+        if (is_array($dec) && isset($dec['ts'])) {
+            return (int) $dec['ts'];
+        }
+        return is_numeric($val) ? (int) $val : null;
+    };
+
     foreach ($components as $key => $label) {
         $best_ts = null;
+        $per_node = [];
         foreach ($envs as $e) {
+            $base = '{geodineum}:gnode:heartbeat:' . $e . ':' . $key;
+            foreach ($nodes as $n) {
+                try {
+                    $ts = $extract_ts($redis->get($base . ':' . $n));
+                } catch (\Throwable $ex) {
+                    $ts = null;
+                }
+                if ($ts !== null) {
+                    if (!isset($per_node[$n]) || $ts > $per_node[$n]) {
+                        $per_node[$n] = $ts;
+                    }
+                    if ($best_ts === null || $ts > $best_ts) {
+                        $best_ts = $ts;
+                    }
+                }
+            }
+            // Transitional: the pre-node-segment flat key, still written by
+            // any component not yet restarted on the new code (it self-expires
+            // within 120s of that restart). Also the fallback when the
+            // constellation registry is unreadable. Remove after all
+            // components are confirmed writing node-scoped keys.
             try {
-                $val = $redis->get('{geodineum}:gnode:heartbeat:' . $e . ':' . $key);
+                $ts = $extract_ts($redis->get($base));
             } catch (\Throwable $ex) {
-                $val = false;
-            }
-            if ($val === false || $val === null) {
-                continue;
-            }
-            $ts = null;
-            $dec = json_decode((string) $val, true);
-            if (is_array($dec) && isset($dec['ts'])) {
-                $ts = (int) $dec['ts'];
-            } elseif (is_numeric($val)) {
-                $ts = (int) $val;
+                $ts = null;
             }
             if ($ts !== null && ($best_ts === null || $ts > $best_ts)) {
                 $best_ts = $ts;
@@ -448,7 +487,20 @@ function gcore_fetch_component_health(): array {
             $age = max(0, $now - $best_ts);
             $status = ($age <= 75) ? 'up' : 'lagging';
         }
-        $out['components'][] = ['key' => $key, 'label' => $label, 'status' => $status, 'age' => $age];
+        $node_rows = [];
+        foreach ($per_node as $n => $nts) {
+            $nage = max(0, $now - $nts);
+            $node_rows[] = [
+                'node'   => $n,
+                'status' => ($nage <= 75) ? 'up' : 'lagging',
+                'age'    => $nage,
+            ];
+        }
+        $out['components'][] = [
+            'key' => $key, 'label' => $label,
+            'status' => $status, 'age' => $age,
+            'nodes' => $node_rows,
+        ];
     }
 
     return $out;
