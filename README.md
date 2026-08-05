@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://geodineum.com">
-    <img src=".github/geodineum-logo.png" alt="Geodineum" width="128">
+    <img src="https://geodineum.com/wp-content/uploads/2026/07/logo_geodineum_launch.png" alt="Geodineum" width="128">
   </a>
 </p>
 
