@@ -818,7 +818,10 @@ class CommsManager implements CommsManagerInterface
             return $validation;
         }
 
-        // XADD test message to COMMS stream for the daemon to dispatch
+        // XADD test message to COMMS stream for the daemon to dispatch.
+        // type is NOT 'test': the daemon drops test messages outright when it
+        // runs --environment production, ACKs them and logs nothing, so this
+        // button reported success for mail that was never sent.
         $environment = $this->config['environment'] ?? 'production';
         $streamKey = "{{$siteId}}:gnode:comms:{$environment}";
         $testId = 'test-' . time();
@@ -832,7 +835,7 @@ class CommsManager implements CommsManagerInterface
         try {
             $redis->xAdd($streamKey, '*', [
                 'id' => $testId,
-                'type' => 'test',
+                'type' => 'alert',
                 'site_id' => $siteId,
                 // Top-level DTAP environment for the COMMS daemon's non-prod
                 // gate (matches the stream env; read as a flat field).
@@ -855,7 +858,10 @@ class CommsManager implements CommsManagerInterface
 
             return [
                 'success' => true,
-                'message' => "Test message dispatched to COMMS stream ({$channel}). Check your inbox.",
+                'message' => $environment === 'production'
+                    ? "Test message dispatched to COMMS stream ({$channel}). Check your inbox."
+                    : "Test message queued ({$channel}), but {$environment} is not production — "
+                        . "the daemon dry-runs it and sends nothing. Only production delivers.",
             ];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Failed to add test message: ' . $e->getMessage()];
