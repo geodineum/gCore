@@ -10,7 +10,7 @@ SPR: gCore = manager-of-managers PHP framework (WP + standalone) over gNode-Clie
 
 ## ::ANCHOR
 container = gCore::getInstance() (gCore.php) → initialize() (gCore.php) → getService(name|alias) (gCore.php).
-capability aliases = 8 aliases → 6 managers (gCore.php):
+capability aliases = 16 aliases → 6 managers (gCore.php: CAPABILITY_ALIAS_MAP):
   security|auth|crypto → SecurityManager
   cache|storage → CacheManager
   template|rendering|tera → TemplateManager
@@ -34,7 +34,8 @@ base-vs-stub resolution = ExtensionResolver::resolve() (ExtensionResolver.php), 
   ∀ $baseManagers: 'stub' slot = Base class ⇒ absent-Pro yields FULL Base impl (NOT degraded).
   ∀ $stubOnlyManagers: 'stub' slot = no-op Stub.
   THIS single rule defines 'CH1 status'.
-design philosophy: bootstrap-once-per-request singleton; stateless components, state in ValKey; capability-vector geometric discovery (gCore.php); strict topology dep-resolution (TopologyParser throws on circular).
+design philosophy: bootstrap-once-per-request singleton; stateless components, state in ValKey; capability-vector geometric discovery (gCore.php); init order = services.yaml `priority` ASCENDING (7 required:true eager + gnode_client early, rest lazy).
+dep pre-init = TopologyParser::resolveDependencies (gCore.php, sole call site) = HARDCODED 4-manager graph (Error/Cache/Security/API), [] ∀ others ⇒ services.yaml `dependencies:` is ADVISORY. NO runtime circular detection; cycle logic (graph + toposort + CircularDependencyException + strict/relaxed/auto-fix) = DependencyResolver+DependencyBundle, CLI-only (admin/cli/dependency-resolver.php).
 
 ## ::IO
 builder boots: gCore::getInstance()->initialize($config) → $gCore->getService('<alias|Name>').
@@ -104,7 +105,7 @@ ExtensionResolver + register.php (THE stub↔Pro dispatcher; architecturally loa
 CH1 stub degradations: 11 stub managers honor interface but no-op/degrade core features (see ::MANAGERS); SEO GEO/AIO blocked (InferenceManager stub → error); Metrics/Analytics need StateManager else no-op; Comms MANAGER-SLOT stub inert, but the admin class gCore\Modules\Comms\CommsManager is a real CH1 stream reader + test-send producer; Ecommerce stub IS only impl (no Pro yet).
 REAL-BASE in-tree limitations (NOT stubs): SecurityManager roles in-memory-only (no ValKey persistence CH1); FormatManager throws without gNode (no local fallback); CacheManager/ResourceManager extension-gated methods throw StorageException without gNode; ErrorManager broadcast → false/[] without gNode; StateManager TTL-on-counter not applied via FCALL, history = single JSON string not LIST, deletion via __DELETED__ marker; VersionManager no getService alias CH1.
 gotchas: services.yaml `class:` is VESTIGIAL for resolution — ExtensionResolver(register.php) OVERRIDES it (gCore.php); but `category`/`priority` ARE load-bearing (init order, gCore.php) + services.yaml is the compile-config→ValKey source + Tier-2 fallback (NOT dead). 7 stale `class:` reconciled to register.php 2026-06-22 (re-run compile-config to refresh ValKey). Classify managers from register.php/on-disk, never services.yaml class. SecurityManager = REAL BASE (audit 'self-labels Stub' was a FALSE POSITIVE — only legit free_tier ValKey-absent fallback).  non-prod gate IS implemented end-to-end (Modules/Comms/CommsManager stamps environment 38b6a21 + Geodineum-COMMS daemon enforces dry-run); only bulk/programmatic dispatch is CH2 gcore-comms.
-failure modes: APIManager auth → hard 503 if SecurityManager absent (not graceful). IPBlockManager↔HtaccessManager hard dep. CookieManager hard dep ErrorManager+CacheManager. singleton-only (no DI). circular topology → TopologyParser throws (strict, no fallback). one gCore instance/process (no clone/wakeup).
+failure modes: APIManager auth → hard 503 if SecurityManager absent (not graceful). IPBlockManager↔HtaccessManager hard dep. CookieManager hard dep ErrorManager+CacheManager. singleton-only (no DI). circular topology → NOT detected at runtime (TopologyParser has no cycle check; the detecting pair is CLI-only) ⇒ a cycle presents as recursion/partial init, not an exception. one gCore instance/process (no clone/wakeup).
 
 ## ::GRAPH
 DEPENDS_ON: gCore → gNode-Client → ValKey ; gCore → ConfigLoader/TopologyParser/ExtensionResolver ; ∀ ValKey-managers → gNodeStorageAdapter (singleton) ; FormatManager → gNode-Client (hard) ; CookieManager → ErrorManager + CacheManager (hard) ; APIManager → SecurityManager (hard 503) + StateManager (soft) ; SecurityManager → StateManager (T2 rate-limit) + gNode-Client (T0/T1) ; IPBlockManager → HtaccessManager (hard) ; VersionManager → CacheManager ; ResourceManager → CacheManager+OptimizationManager+MetricsManager+StateManager (all soft) ; SEOManager(stub) → InferenceManager(stub) ⇒ GEO/AIO=error ; InstallManager → ErrorManager+CacheManager+gNode-Client+geodineum.com.
@@ -120,3 +121,4 @@ ISOLATED_FROM (CH2 Pro, EXCLUDED): all gcore-<short> Pro packages — TemplateMa
 - "getService aliases (8→6) vs getInstance()-only managers (Htaccess/IPBlock/Version/Backup)"
 - "universal config + gNodeStorageAdapter singleton injection at gCore.php; ModuleInterface ∀ manager"
 - "SecurityManager self-labels Stub = drift; it is REAL BASE, no Pro promised"
+- "init order = `priority` ONLY; `dependencies:` advisory; TopologyParser hardcodes 4 managers; NO runtime cycle detection (DependencyResolver/DependencyBundle = CLI-only)"
