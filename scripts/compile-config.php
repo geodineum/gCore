@@ -262,24 +262,12 @@ if (!empty($siteIds) && extension_loaded('redis')) {
                 ],
             ]));
 
-            // Increment constellation generation (signals APCu staleness across all nodes)
-            $genKey = '{' . $siteId . '}:constellation:generation';
-            $newGen = $redis->incr($genKey);
-
-            // Broadcast config_updated (within site ACL scope)
-            try {
-                $broadcastKey = '{' . $siteId . '}:constellation:broadcast';
-                $redis->xAdd($broadcastKey, '*', [
-                    't' => 'config_updated',
-                    'ss' => $siteId,
-                    'gen' => (string)$newGen,
-                    'vh' => $versionHash,
-                    'ts' => (string)(time() * 1000),
-                ]);
-                $redis->xTrim($broadcastKey, 100, true);
-            } catch (\Throwable $broadcastErr) {
-                // Broadcast failure is non-fatal — generation counter is sufficient
-            }
+            // Bump the constellation generation through the canonical FCALL:
+            // the INCR and the config_updated broadcast live in gnode_config.lua,
+            // one writer of that event shape rather than a second copy here.
+            $newGen = (int) $redis->rawCommand(
+                'FCALL', 'GNODE_CONSTELLATION_GENERATION_INCR', '0', $siteId, $versionHash
+            );
 
             fwrite(STDOUT, "    {$siteId}: 3 keys stored, generation {$newGen} (user: {$aclUser})\n");
 
