@@ -1654,11 +1654,12 @@ class gCore implements ModuleInterface {
         if ($this->hasService('gnode_client')) {
             try {
                 $gNodeClient = $this->getService('gnode_client');
-                $serviceIds = $gNodeClient->geometricDiscover($capabilities);
+                $discovered = $gNodeClient->geometricDiscover($capabilities);
 
-                if (!empty($serviceIds)) {
-                    // Map discovered IDs to gCore services
-                    foreach ($serviceIds as $serviceId) {
+                if (!empty($discovered)) {
+                    // Map discovered IDs to gCore services, nearest first
+                    foreach ($discovered as $match) {
+                        $serviceId = (string) ($match['service_id'] ?? '');
                         // Extract service name from "tool:ServiceName" format
                         if (preg_match('/^tool:(.+)$/', $serviceId, $matches)) {
                             $serviceName = $matches[1];
