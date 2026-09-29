@@ -99,16 +99,22 @@ class TopologyManagerStub implements TopologyManagerInterface
      */
     private function initializeDefaultDimensions(): void
     {
-        // Provide minimal dimension info for display purposes
+        // Minimal dimension info for display, in the daemon's own order
+        // (service_schema.yaml v4.0). The names and positions must match the
+        // daemon: a display that labels a coordinate with another axis's name is
+        // worse than one that shows the bare index.
         $defaultDims = [
-            'protocol', 'native_format', 'api_version', 'contract_stability',     // 0-3
-            'clearance_required', 'auth_method', 'data_sensitivity', 'service_scope', // 4-7
-            'domain_primary', 'domain_secondary', 'specialization',                    // 8-10
-            'throughput_tier', 'latency_class', 'reliability_tier',                    // 11-13
-            'pipeline_stage', 'execution_priority', 'current_load',                    // 14-16
-            'service_tier', 'environment',                                             // 17-18
-            'user_x', 'user_y', 'user_z',                                             // 19-21
-            'registration_order'                                                       // 22
+            // declared, hashed into the bucket key (0-15)
+            'protocol', 'api_version', 'contract_stability',                          // 0-2
+            'clearance_required', 'auth_method', 'data_sensitivity',                  // 3-5
+            'service_scope', 'domain_primary', 'domain_secondary', 'specialization',  // 6-9
+            'throughput_tier', 'latency_class', 'reliability_tier',                   // 10-12
+            'pipeline_stage', 'execution_priority', 'environment',                    // 13-15
+            // derived by the daemon's sampler, ranked, never hashed (16-18)
+            'current_load', 'health_status', 'lifecycle_state',                       // 16-18
+            // storage: stored and returned, refused in a query (19-22)
+            'native_format', 'implementation_language', 'data_persistence',           // 19-21
+            'service_tier'                                                             // 22
         ];
 
         foreach ($defaultDims as $index => $name) {

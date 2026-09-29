@@ -18,39 +18,32 @@ TopologyManager operates as a **gNode-only service mesh coordinator**:
 3. **Topology Visualization**: Provides 3D visualization data
 4. **Smart Registration**: Hash-based idempotency prevents redundant registrations
 
-### 23-Dimension Capability Schema (19 discovery + 4 storage-only)
+### 23-Dimension Capability Schema (16 declared + 3 derived + 4 storage)
+
+An axis's index is its zone: both cuts are prefix truncations
+(`hashed_dimensions` 16, `discovery_dimensions` 19, `total_dimensions` 23).
 
 ```
-Layer 1: Interface Identity (0-3)
-  - protocol, native_format, api_version, contract_stability
+Declared by the provider, hashed into the bucket key (0-15)
+  0-2    protocol, api_version, contract_stability
+  3-5    clearance_required, auth_method, data_sensitivity
+  6-9    service_scope, domain_primary, domain_secondary, specialization
+  10-12  throughput_tier, latency_class, reliability_tier   (declared levels)
+  13-15  pipeline_stage, execution_priority, environment
 
-Layer 2: Access Control (4-6)
-  - clearance_required, auth_method, data_sensitivity
+Derived by the daemon, ranked in a query, never hashed (16-18)
+  16     current_load      measured; 0.00 means unknown
+  17     health_status     measured; 0.00 means unknown
+  18     lifecycle_state   written by the registration state machine
 
-Layer 3: Service Scope (7)
-  - service_scope
-
-Layer 4: Functional Domain (8-10)
-  - domain_primary, domain_secondary, specialization
-
-Layer 5: Performance Profile (11-13)
-  - throughput_tier, latency_class, reliability_tier
-
-Layer 6: Workflow Context (14-15)
-  - pipeline_stage, execution_priority
-
-Layer 7: Runtime State (16)
-  - current_load
-
-Layer 8: Classification (17-18)
-  - service_tier, environment
-
-Layer 9: Visual Topology (19-21) — storage-only, user-set
-  - user_x, user_y, user_z
-
-Layer 10: Temporal (22) — storage-only, auto-injected
-  - registration_order
+Storage: stored and returned, refused in a query (19-22)
+  19-22  native_format, implementation_language, data_persistence, service_tier
 ```
+
+A derived axis is written by the daemon's sampler through
+`GNODE_TOPO_SET_DERIVED`, never by a registering provider, and a
+re-registration preserves the last measurement. Ask the daemon for the live
+schema (`GNODE_TOPOLOGY_GET_SCHEMA`) rather than copying this list.
 
 ## Initialization
 
