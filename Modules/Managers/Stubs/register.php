@@ -79,7 +79,13 @@ $baseManagers = [
  *   gCore-Topology     : gCore\Topology\TopologyManagerPro       (1641 LOC)
  *   gCore-Translate    : gCore\Translate\TranslateManagerPro     (1101 LOC)
  *
- * EcommerceManager has no Pro package yet — Stub is the only impl.
+ *   gCore-Mollie       : gCore\Mollie\MollieManagerPro
+ *
+ * EcommerceManager has no Pro package yet — Stub is the only impl. Mollie is
+ * deliberately its own manager rather than folded into it: a gateway owns
+ * credentials, idempotency and dispute evidence, and an order model owns
+ * carts and fulfilment. When gCore-Ecommerce gets a Pro package it consumes
+ * MollieManager; it does not absorb it.
  */
 $stubOnlyManagers = [
     'AnalyticsManager'    => 'gCore\\Modules\\Managers\\Stubs\\AnalyticsManagerStub',
@@ -88,6 +94,7 @@ $stubOnlyManagers = [
     'InferenceManager'    => 'gCore\\Modules\\Managers\\Stubs\\InferenceManagerStub',
     'ManifestManager'     => 'gCore\\Modules\\Managers\\Stubs\\ManifestManagerStub',
     'MetricsManager'      => 'gCore\\Modules\\Managers\\Stubs\\MetricsManagerStub',
+    'MollieManager'       => 'gCore\\Modules\\Managers\\Stubs\\MollieManagerStub',
     'OptimizationManager' => 'gCore\\Modules\\Managers\\Stubs\\OptimizationManagerStub',
     'SEOManager'          => 'gCore\\Modules\\Managers\\Stubs\\SEOManagerStub',
     'TemplateManager'     => 'gCore\\Modules\\Managers\\Stubs\\TemplateManagerStub',

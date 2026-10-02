@@ -497,6 +497,32 @@ services:
       webhooks: gnode
 
   # ---------------------------------------------------------------------------
+  # MollieManager - Mollie payments (resolved via ExtensionResolver)
+  # Separate from EcommerceManager on purpose: a gateway owns credentials,
+  # idempotency and dispute evidence; an order model owns carts and fulfilment.
+  # ---------------------------------------------------------------------------
+  MollieManager:
+    class: gCore\Modules\Managers\Stubs\MollieManagerStub
+    category: extension
+    priority: 109
+    dependencies:
+      - CacheManager
+      - ErrorManager
+      - SecurityManager
+    description: Mollie payment integration - stub by default (refuses every money-moving call); full implementation via geodineum/gcore-mollie
+    state_vector: [payments, commerce]
+    capabilities:
+      payments: 0.0                  # Requires: gcore-mollie + an API key
+      refunds: 0.0                   # Requires: gcore-mollie + an API key
+      recurring_payments: 0.0        # Requires: gcore-mollie + a customer/mandate
+      dispute_evidence: 0.0          # Requires: gcore-mollie (record trail)
+    capability_requirements:
+      payments: extension
+      refunds: extension
+      recurring_payments: extension
+      dispute_evidence: extension
+
+  # ---------------------------------------------------------------------------
   # EcommerceManager - Ecommerce integration (resolved via ExtensionResolver)
   # ---------------------------------------------------------------------------
   EcommerceManager:

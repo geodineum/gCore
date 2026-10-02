@@ -678,7 +678,59 @@ add_action('rest_api_init', function() {
             return current_user_can('manage_options');
         }
     ]);
+
+    // Mollie webhook. Public by necessity — Mollie authenticates nothing on the
+    // classic payment webhook, which is why the manager treats the body as a
+    // hint and re-fetches the payment instead of trusting it.
+    register_rest_route('gcore/v1', '/mollie/webhook', [
+        'methods' => 'POST',
+        'callback' => 'gcore_rest_mollie_webhook',
+        'permission_callback' => '__return_true'
+    ]);
 });
+
+function gcore_rest_mollie_webhook(\WP_REST_Request $request): \WP_REST_Response {
+    $siteId = (string)(gcore_admin_site_id() ?? 'default');
+
+    // gCore is frontend-only-initialized, so the frontend $gCore global is
+    // absent here and reaching for it would have failed every webhook silently
+    // while returning 200. Resolve the class and give it the per-site client,
+    // the same route the other REST handlers take.
+    $manager = null;
+    try {
+        $class = \gCore\Modules\Core\Utils\ExtensionResolver::resolve('MollieManager');
+        if (is_string($class) && class_exists($class) && method_exists($class, 'getInstance')) {
+            $manager = $class::getInstance();
+            if (!$manager->isInitialized()) {
+                $manager->initialize([
+                    'site_id'      => $siteId,
+                    'gnode_client' => gcore_get_admin_gnode_client(),
+                ]);
+            }
+        }
+    } catch (\Throwable $e) {
+        error_log('[gCore] mollie webhook: ' . $e->getMessage());
+        $manager = null;
+    }
+
+    if (!is_object($manager) || !method_exists($manager, 'handleWebhook')) {
+        // 500: Mollie retries for 26 hours, and a site that cannot load its own
+        // payment manager wants those retries — the alternative is a paid
+        // payment that stays `open` forever with nothing in the log to find.
+        error_log('[gCore] mollie webhook: no MollieManager available for ' . $siteId);
+        return new \WP_REST_Response(['ok' => false], 500);
+    }
+
+    $result = $manager->handleWebhook(
+        $siteId,
+        (array)$request->get_body_params(),
+        (array)$request->get_headers(),
+        (string)$request->get_body()
+    );
+
+    $status = isset($result['status']) ? (int)$result['status'] : 200;
+    return new \WP_REST_Response(['ok' => !empty($result['ok'])], $status);
+}
 
 function gcore_rest_status(): WP_REST_Response {
     global $gCore;
