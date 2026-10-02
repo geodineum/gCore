@@ -314,6 +314,64 @@ if (!$gNodeClientLoaded) {
     gcore_bootstrap_log("gNode-Client autoloader NOT found at any standard path — managers will degrade to legacy mode");
 }
 
+// Pro overlay probe — the open-core seam. The Pro packages are deliberately NOT
+// a Composer requirement of gCore, because gCore must install publicly without
+// them; Composer therefore generates no PSR-4 rule for `gCore\Analytics\`,
+// `gCore\Topology\` and the rest, and ExtensionResolver's class_exists() check
+// could not see them however present they were on disk. Ten managers resolved to
+// their stub for that reason alone, with the packages symlinked into vendor/ and
+// listed in vendor/composer/installed.json.
+//
+// Each package declares its own namespace in its own composer.json, so the map is
+// read from there rather than kept in a list here. Probe order mirrors the
+// gNode-Client probe above: sibling first, then the explicit production path,
+// with an env override for a tree somewhere else.
+$gcoreProDirs = array_filter([
+    getenv('GCORE_PRO_DIR') ? rtrim((string) getenv('GCORE_PRO_DIR'), '/') : null,
+    dirname(GCORE_BASE_PATH) . '/pro/gCore',
+    '/opt/geodineum/pro/gCore',
+]);
+$gcoreProPrefixes = [];
+foreach ($gcoreProDirs as $proDir) {
+    if (!is_dir($proDir)) {
+        continue;
+    }
+    foreach (glob($proDir . '/gCore-*/composer.json') ?: [] as $manifest) {
+        $declared = json_decode((string) @file_get_contents($manifest), true);
+        $psr4 = is_array($declared) ? ($declared['autoload']['psr-4'] ?? []) : [];
+        if (!is_array($psr4)) {
+            continue;
+        }
+        foreach ($psr4 as $namespace => $path) {
+            $gcoreProPrefixes[rtrim((string) $namespace, '\\') . '\\'] =
+                dirname($manifest) . '/' . trim((string) $path, '/') . '/';
+        }
+    }
+    if ($gcoreProPrefixes !== []) {
+        gcore_bootstrap_log(sprintf('gCore Pro overlay: %d namespace(s) from %s',
+            count($gcoreProPrefixes), $proDir));
+        break;
+    }
+}
+if ($gcoreProPrefixes !== []) {
+    spl_autoload_register(static function (string $class) use ($gcoreProPrefixes): void {
+        foreach ($gcoreProPrefixes as $prefix => $dir) {
+            if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
+                continue;
+            }
+            $file = $dir . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+            if (is_file($file)) {
+                require $file;
+            }
+            // One prefix owns one namespace; a miss is a missing file, not a
+            // reason to keep searching the other packages for the same name.
+            return;
+        }
+    });
+} else {
+    gcore_bootstrap_log('gCore Pro overlay not present — managers resolve to their shipped implementation');
+}
+
 // Legacy in-tree autoloader probe — an earlier design that was never
 // completed. Kept for backwards-compat with any local builds that
 // still ship this file; safely no-op if absent.
