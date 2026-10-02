@@ -90,7 +90,25 @@ class ExtensionResolver
             return $config['stub'];
         }
 
-        if (class_exists($config['full'])) {
+        // A broken extension should degrade, not take the site down. class_exists()
+        // runs the autoloader, so a Pro class whose own dependencies have drifted
+        // fails inside this check rather than at the call site, and the whole point
+        // of a shipped stub is that there is always something to return. This
+        // catches what PHP hands over — a missing parent class or interface. It
+        // cannot catch everything: `use` of a missing trait is a fatal PHP never
+        // turns into a Throwable, so deploy order still matters and the per-site
+        // disable list, not this block, is what makes a rollout safe.
+        try {
+            $available = class_exists($config['full']);
+        } catch (\Throwable $e) {
+            $available = false;
+            // Not a debug detail: an extension that is present and cannot be
+            // loaded is a misconfiguration, and it is silent at the default level
+            // if it logs like a routine resolution.
+            self::logResolution($managerName, 'unloadable: ' . $e->getMessage(), $config['stub'], 'error');
+        }
+
+        if ($available) {
             self::$resolved[$managerName] = $config['full'];
             self::logResolution($managerName, 'full', $config['full']);
             return $config['full'];
@@ -199,9 +217,9 @@ class ExtensionResolver
         return self::$registry;
     }
 
-    private static function logResolution(string $manager, string $mode, string $class): void
+    private static function logResolution(string $manager, string $mode, string $class, string $level = 'debug'): void
     {
-        if (SelfContainedErrorHandler::shouldLog('debug')) {
+        if (SelfContainedErrorHandler::shouldLog($level)) {
             error_log("[gCore] ExtensionResolver: {$manager} -> {$mode} ({$class})");
         }
     }
