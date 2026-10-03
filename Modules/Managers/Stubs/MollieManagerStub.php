@@ -151,6 +151,12 @@ class MollieManagerStub implements MollieManagerInterface
         ];
     }
 
+    public function splitAmount(array $amount, array $weights): array
+    {
+        $this->noteUpgrade();
+        return ['ok' => false, 'parts' => null, 'error' => $this->reason()];
+    }
+
     public function getWebhookUrl(string $siteId): string { return ''; }
 
     public function getPaymentRecord(string $siteId, string $paymentId): ?array { return null; }

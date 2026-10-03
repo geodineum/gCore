@@ -160,6 +160,19 @@ interface MollieManagerInterface extends ModuleInterface
     public function handleWebhook(string $siteId, array $post, array $headers = [], string $rawBody = ''): array;
 
     /** The URL this manager answers webhooks on, as sent to Mollie. */
+    /**
+     * Split an amount into parts that sum to it exactly.
+     *
+     * Rounding each share independently loses or invents a unit, and a cent
+     * nobody owns is what an accountant finds a year later. Largest remainder,
+     * computed by the exact-decimal authority rather than in PHP.
+     *
+     * @param array<string,mixed> $amount  ["currency"=>"EUR","value"=>"10.00"] or ["currency"=>"EUR","minor"=>1000]
+     * @param array<int,int>      $weights non-negative integers, not all zero
+     * @return array{ok:bool,parts:array<int,string>|null,error:string|null}
+     */
+    public function splitAmount(array $amount, array $weights): array;
+
     public function getWebhookUrl(string $siteId): string;
 
     /**
