@@ -19,7 +19,15 @@ capability aliases = 16 aliases → 6 managers (gCore.php: CAPABILITY_ALIAS_MAP)
   api|rest → APIManager
 classifier = register.php $baseManagers vs $stubOnlyManagers (Modules/Managers/Stubs/register.php), corroborated by `ls Modules/Managers/Base/`.
   REAL BASE = Base/<Name>/<Name>.php exists; ExtensionResolver 'stub' slot IS the canonical Base class (no Pro).
-  CH1 STUB = no Base/ dir; 'stub' slot = no-op Stubs/<Name>Stub.php; Pro ships CH2 via geodineum/gcore-<short>.
+  CH1 STUB = no Base/ dir; 'stub' slot = Stubs/<Name>Stub.php — NOT uniformly no-op (corrected 2026-10-05): AnalyticsManagerStub (512L, visitor hashing + per-day counters) and MetricsManagerStub (499L, 14 state calls, reads live {site}:metrics) ARE the free impl; Translate/Manifest/Topology stubs carry 0 state-touching calls. Pro may ship CH2 via geodineum/gcore-<short>, but seams (below) are the preferred route.
+seams = gCore\Modules\Core\Seams — named points in FREE code an optional impl may fill; UNFILLED ⇒ nothing happens, free behaviour stands.
+  apply(name,value,...)⇒value (transform, unfilled=identity) | signal(name,...)⇒void (event, unfilled=no-op) | fill(name,fn,prio)⇒bool | filled(name) | block(name) per-site kill switch | state()⇒name=>count.
+  INVOKER guards, not the filler: every filler wrapped in catch(\Throwable) because catch(\Exception) misses \Error and 8/10 Pro managers died of exactly that. A throwing filler costs its own contribution only.
+  undeclared name ⇒ fill() refuses + logs (a typo'd filler is indistinguishable from one never reached).
+  null-fallback = UNCHANGED, not quietly worse: money.exact unfilled ⇒ null ⇒ caller MUST fail closed, never float arithmetic.
+  CATALOGUE = declared surface (absent ⇒ unsellable, nothing would call it); state() = measured surface (what a probe reads).
+  Pro registration = composer extra.gcore.bootstrap callable, collected by bootstrap.php's Pro overlay, invoked inside catch(\Throwable) ⇒ a package that fatals on register leaves seams unfilled + 1 log line, site unaffected.
+  WHY ≠ substitution: substitution forces a paid impl to re-implement the free manager (5,081 stub lines) to extend it, so its \Error removes the free behaviour too.
 ≠ classifier: services.yaml is advisory metadata, NOT the authoritative classifier (see §6.3).
 roster = 13 REAL-BASE build-with + 11 CH1-STUB build-with + 2 install/deploy (also build-with) = 26 documented.
   15 on-disk Base/ dirs = 13 build-with-base + InstallManager + BackupManager.

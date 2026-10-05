@@ -70,11 +70,60 @@ resolve(name):
 ```
 
 - For **`$baseManagers`** the "stub slot" **IS the canonical Base class** (`Base/<Name>/<Name>.php`). No Pro package planned ⇒ absence of a Pro yields the **full Base impl**, never a degraded stub.
-- For **`$stubOnlyManagers`** the "stub slot" is the no-op `Stubs/<Name>Stub.php`. A Pro ships in CH2 as `geodineum/gcore-<short>`.
+- For **`$stubOnlyManagers`** the "stub slot" is `Stubs/<Name>Stub.php`. **CORRECTED 2026-10-05: this is not uniformly a no-op.** Completeness varies per manager and must not be assumed. Measured by counting state-touching calls (`$this->state|getState|incrementDaily|trackUniqueDaily|hasStateManager|redis|client`): `AnalyticsManagerStub` (512 lines) does privacy-first visitor hashing and per-day unique/pageview counters, and `MetricsManagerStub` (499 lines) carries 14 such calls and reads the live `{site}:metrics` hash — both are the FREE IMPLEMENTATION, not a placeholder. `TranslateManagerStub` (198), `ManifestManagerStub` (332) and `TopologyManagerStub` (408) carry none. A Pro may ship in CH2 as `geodineum/gcore-<short>`, but see §1.6: substitution is no longer the preferred way to add optional capability.
 
 Pro-class convention (`register.php`): class `gCore\<Short>\<Short>ManagerPro`, package `geodineum/gcore-<short>`, where `<Short>` = name minus `Manager`. Evidence: `Modules/Core/Utils/ExtensionResolver.php`; `Modules/Managers/Stubs/register.php`.
 
 > **register.php nuance.** `$baseManagers` explicitly lists only the three managers that were moved to `Base/` via ExtensionResolver (`StateManager`, `WordPressManager`, `AssetManager`). The other 12 `Base/` directories are core-loaded (not extension-resolved) but are equally REAL BASE on disk. The classifier is the `Base/` directory's existence, not list membership.
+
+---
+
+### 1.6 Seams — the preferred way to add optional capability (LOAD-BEARING)
+
+`gCore\Modules\Core\Seams`. A **seam** is a named point in the free code where
+an optional implementation may add to or transform what happens. **Unfilled, a
+seam does nothing and the free behaviour is what the site gets.**
+
+Seams exist because substitution (§1.5) requires a paid implementation to
+re-implement a free manager in order to extend it, so an `\Error` inside the
+paid class removes the free behaviour too. Eight of ten Pro managers failed that
+way in the 2026-10-05 audit.
+
+```
+Seams::apply(name, value, ...args) → value      transform; unfilled ⇒ value unchanged
+Seams::signal(name, ...args)       → void       event;     unfilled ⇒ nothing happens
+Seams::fill(name, callable, prio)  → bool       offer a filler; false if refused
+Seams::filled(name)                → bool       is anything filling it
+Seams::block(name)                 → void       per-site kill switch, seam granularity
+Seams::state()                     → name⇒count what is ACTUALLY filled
+```
+
+Three rules are load-bearing:
+
+1. **Invocation is guarded by the invoker, never trusted to the filler.** A
+   filler that throws anything (`\Throwable`, so `\Error` included) is logged at
+   error level and skipped; the value it was handed continues to the next filler.
+   A broken filler costs its own contribution and nothing else.
+2. **An undeclared seam name is refused and logged, never silently accepted.** A
+   filler registered against a typo would be indistinguishable from one that
+   works and is never reached.
+3. **Null fallback means UNCHANGED, not quietly worse.** `money.exact` yields
+   `null` when unfilled and a caller needing an exact amount must fail closed
+   rather than compute with floats.
+
+`Seams::CATALOGUE` is the declared surface — a capability absent from it cannot
+be offered, because nothing in the framework would call it. `Seams::state()` is
+the measured one, and it is what a probe reads; a package's own account of what
+it fills is not evidence.
+
+**Pro registration.** A package declares `extra.gcore.bootstrap` in its
+`composer.json` (a callable). `bootstrap.php`'s Pro overlay collects these while
+reading each manifest for PSR-4 and invokes each **inside `catch (\Throwable)`**
+after the overlay autoloader is registered. A package that fatals while
+registering leaves its seams unfilled and logs one line; the site is unaffected.
+
+Evidence: `Modules/Core/Seams.php`; `bootstrap.php` (Pro overlay);
+`tests/seams-check.php` (14 assertions, `php tests/seams-check.php`).
 
 ---
 
