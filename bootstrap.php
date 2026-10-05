@@ -332,6 +332,7 @@ $gcoreProDirs = array_filter([
     '/opt/geodineum/pro/gCore',
 ]);
 $gcoreProPrefixes = [];
+$gcoreProBootstraps = [];
 foreach ($gcoreProDirs as $proDir) {
     if (!is_dir($proDir)) {
         continue;
@@ -345,6 +346,13 @@ foreach ($gcoreProDirs as $proDir) {
         foreach ($psr4 as $namespace => $path) {
             $gcoreProPrefixes[rtrim((string) $namespace, '\\') . '\\'] =
                 dirname($manifest) . '/' . trim((string) $path, '/') . '/';
+        }
+        // extra.gcore.bootstrap: the one callable a package offers so it can fill
+        // seams. Collected here and invoked below, once the overlay autoloader
+        // that can load it is registered.
+        $entry = is_array($declared) ? ($declared['extra']['gcore']['bootstrap'] ?? null) : null;
+        if (is_string($entry) && $entry !== '') {
+            $gcoreProBootstraps[basename(dirname($manifest))] = $entry;
         }
     }
     if ($gcoreProPrefixes !== []) {
@@ -370,6 +378,34 @@ if ($gcoreProPrefixes !== []) {
     });
 } else {
     gcore_bootstrap_log('gCore Pro overlay not present — managers resolve to their shipped implementation');
+}
+
+// Let each Pro package register its seam fillers, one guarded call each.
+//
+// The guard is the design, not defensive habit. Under class substitution a paid
+// implementation REPLACED the free manager, so an unimported class name inside
+// it raised \Error — a sibling of \Exception that `catch (\Exception)` steps
+// past — and took the free behaviour down with it. Eight of ten managers failed
+// that way. A filler can only reach a site through a declared seam, registration
+// cannot escape this catch, and gCore\Modules\Core\Seams guards invocation too,
+// so a package that is broken at any of the three points costs its own
+// contribution and nothing else.
+//
+// Nothing here trusts a package's own account of what it fills. Seams::state()
+// reports what is actually registered, which is the only claim worth probing.
+foreach ($gcoreProBootstraps as $package => $entry) {
+    try {
+        if (!is_callable($entry)) {
+            gcore_bootstrap_log(sprintf(
+                'gCore Pro %s declares bootstrap "%s" which is not callable — seams stay unfilled',
+                $package, $entry));
+            continue;
+        }
+        $entry();
+    } catch (\Throwable $e) {
+        gcore_bootstrap_log(sprintf('gCore Pro %s failed to register (%s: %s) — seams stay unfilled',
+            $package, get_class($e), $e->getMessage()));
+    }
 }
 
 // Legacy in-tree autoloader probe — an earlier design that was never

@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace gCore\Modules\Managers\Stubs;
 
 use gCore\Modules\Core\Interfaces\ModuleInterface;
+use gCore\Modules\Core\Seams;
 use gCore\Modules\Core\Interfaces\Extensions\AnalyticsManagerInterface;
 
 require_once dirname(__DIR__) . '/Traits/StateManagerAware.php';
@@ -153,6 +154,14 @@ class AnalyticsManagerStub implements AnalyticsManagerInterface
 
         // Always increment pageview counter
         $this->incrementDaily('pageviews', 1);
+
+        // The counters above are the entire free tier and stay authoritative.
+        // This offers the same event to anything that wants more from it; with
+        // nothing filling the seam it is one array lookup and changes nothing.
+        Seams::signal('analytics.event', 'visit', [
+            'visitor' => $visitorHash,
+            'new'     => $isNew,
+        ]);
     }
 
     /**
