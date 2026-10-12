@@ -39,6 +39,7 @@ service container init (gCore.php):
 lazy-load: getService() on uninitialized → initializeService() registers before initialize() (recursion-guard).
 base-vs-stub resolution = ExtensionResolver::resolve() (ExtensionResolver.php), invoked at gCore.php:
   if force-disabled → stub ; elif class_exists(ProClass) → Pro ; else → stub.
+  force-disabled source = WP option gcore_disabled_extensions | standalone env GCORE_DISABLED_EXTENSIONS (comma list, `*` = all) ⇒ a standalone app can pin the free path while a Pro package on disk is broken.
   ∀ $baseManagers: 'stub' slot = Base class ⇒ absent-Pro yields FULL Base impl (NOT degraded).
   ∀ $stubOnlyManagers: 'stub' slot = no-op Stub.
   THIS single rule defines 'CH1 status'.

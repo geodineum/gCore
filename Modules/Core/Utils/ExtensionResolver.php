@@ -195,14 +195,24 @@ class ExtensionResolver
         return in_array($managerName, self::getDisabledList(), true);
     }
 
-    /** Force-disabled list from WordPress options, or [] if unavailable. */
+    /**
+     * Force-disabled list: the WordPress option, or outside WordPress the
+     * GCORE_DISABLED_EXTENSIONS env (comma list of manager names, `*` = all).
+     */
     private static function getDisabledList(): array
     {
-        if (!function_exists('get_option')) {
+        if (function_exists('get_option')) {
+            $disabled = get_option('gcore_disabled_extensions', []);
+            return is_array($disabled) ? $disabled : [];
+        }
+        $env = trim((string) getenv('GCORE_DISABLED_EXTENSIONS'));
+        if ($env === '') {
             return [];
         }
-        $disabled = get_option('gcore_disabled_extensions', []);
-        return is_array($disabled) ? $disabled : [];
+        if ($env === '*') {
+            return array_keys(self::$registry);
+        }
+        return array_values(array_filter(array_map('trim', explode(',', $env))));
     }
 
     /** Invalidate the resolved-class cache (call after toggling admin state). */

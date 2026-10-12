@@ -64,7 +64,8 @@ Every manager name is mapped in `register.php` and resolved through `ExtensionRe
 
 ```
 resolve(name):
-  if force-disabled (gcore_disabled_extensions option) → return stub slot
+  if force-disabled (gcore_disabled_extensions option; outside WP the
+     GCORE_DISABLED_EXTENSIONS env, comma list or `*`) → return stub slot
   elif class_exists(ProClass)                          → return Pro
   else                                                 → return stub slot
 ```
