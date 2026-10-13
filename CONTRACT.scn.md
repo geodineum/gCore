@@ -83,7 +83,7 @@ VersionManager · public · VersionManager::getInstance() ONLY (getService alias
 — CH1 STUB (no Base/ dir; no-op/degraded; Pro ships CH2; logs one-time WP_DEBUG upgrade notice; routed via ExtensionResolver::resolve() at gCore.php) —
   document ONLY stub behavior; name Pro exists, do NOT document Pro methods.
 TemplateManager · public · getService(template|rendering|tera|TemplateManager) · CH1 STUB: basic {{var}} substitution + form security (CSRF via CacheManager, honeypot, timing, XSS patterns, deepSanitize) WORK; template registration/persistence/Tera engine = no-op/null. Pro: gCore\Template\TemplateManagerPro (gcore-template).
-TopologyManager · public · getService(TopologyManager) · CH1 STUB: discovery/registration return []/false; returns 23 read-only stub dimensions (UI-only). Pro: gCore\Topology\TopologyManagerPro.
+TopologyManager · public · getService(TopologyManager) · CH1 STUB: discovery/registration return []/false; returns the one topology's site-shape axes (24 slots, read-only, UI-only). Pro: gCore\Topology\TopologyManagerPro.
 SEOManager · public · getService(SEOManager) · CH1 STUB: in-memory meta/schema/sitemap/robots (no persistence); ALL GEO/AIO methods empty/error (need InferenceManager). Pro: gCore\SEO\SEOManagerPro.
 OptimizationManager · public · getService(OptimizationManager) · CH1 STUB: full no-op/passthrough; exclusion lists in-memory only. Pro: gCore\Optimization\OptimizationManagerPro.
 ManifestManager · public · getService(ManifestManager) · CH1 STUB: minimal PWA manifest + basic SW registration; icon-validation hardcoded false; install-tracking no-op. Pro: gCore\Manifest\ManifestManagerPro.
@@ -95,7 +95,7 @@ TranslateManager · public · getService(TranslateManager) · CH1 STUB: returns 
 EcommerceManager · public · getService(EcommerceManager) · CH1 STUB: adapter auto-detect (WooCommerceAdapter shipped) + delegation for cart/product/inventory; caching/analytics/checkout-security all no-op. NO Pro package yet — stub IS the ONLY impl. services.yaml extension (CORRECT).
 
 — INSTALL/DEPLOY-TIME (build-with, FLAGGED not hidden; PRIMARY lifecycle = install/deploy, runtime APIs exposed) —
-InstallManager · public · InstallManager::getInstance() ONLY · extension install, file-integrity vs geodineum.com registry, warranty tracking, gNode distributed locking. install/deploy-heavy BUT runtime verifyIntegrity()/getWarrantyInfo() callable by builders. NOT in services.yaml and loadServiceTopology does not merge geometric_topology.yaml services, so getService(InstallManager) is NOT wired in CH1 (throws); registry in geometric_topology.yaml; NO register.php entry (core-loaded, not extension-resolved). InstallManager.php.
+InstallManager · public · InstallManager::getInstance() ONLY · extension install, file-integrity vs geodineum.com registry, warranty tracking, gNode distributed locking. install/deploy-heavy BUT runtime verifyIntegrity()/getWarrantyInfo() callable by builders. NOT in services.yaml, so getService(InstallManager) is NOT wired in CH1 (throws); NO register.php entry (core-loaded, not extension-resolved). InstallManager.php.
 BackupManager · public · BackupManager::getInstance() · filesystem backup/restore/retention under {base}/backups/. backup/restore lifecycle + Geodineum-BAK hooks (README public 'Backup hooks for Geodineum-BAK'); createBackup/restoreBackup/cleanOldBackups runtime-callable. No getService alias; not in services.yaml; not in register.php (core-loaded). BackupManager.php.
 
 — INTERNAL-LIFECYCLE/PLUMBING SET (NOT build-with) —

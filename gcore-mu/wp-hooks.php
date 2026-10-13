@@ -239,18 +239,27 @@ function gcore_site_active_environment(): ?string {
  * @return array{services: array, error: ?string}
  */
 /**
- * Classify the live topology into Sites vs Services.
- *
- * The ecosystem invariant: every service exposed to the internet IS a site;
- * a service with no public surface (Geodineum-COMMS, -BAK, the daemon, …) is
- * just a service. Web profiles register with metadata.type === 'web'.
+ * The constellation this site reads: the client's topology namespace.
  */
-function gcore_topology_entry_is_site(array $metadata): bool {
-    $type = strtolower((string) ($metadata['type'] ?? ''));
-    return $type === 'web'
-        || $type === 'site'
-        || !empty($metadata['url'])
-        || !empty($metadata['domain']);
+function gcore_constellation(): string {
+    $client = function_exists('gcore_get_admin_gnode_client') ? gcore_get_admin_gnode_client() : null;
+    if ($client && method_exists($client, 'getTopologyNamespace')) {
+        return (string) $client->getTopologyNamespace();
+    }
+    return (string) (getenv('GNODE_TOPOLOGY_NAMESPACE') ?: 'geodineum');
+}
+
+/**
+ * Sites vs services on the one topology: a site is shape 3.1 (the layer says so,
+ * not the metadata). Apps (3.2) and daemons (3.3) are services.
+ */
+function gcore_topology_entry_is_site(array $entry): bool {
+    return (string) ($entry['shape'] ?? '') === '3.1';
+}
+
+function gcore_shape_name(?string $key): string {
+    static $names = ['1' => 'node', '2' => 'component', '3.1' => 'site', '3.2' => 'app', '3.3' => 'daemon', '4.1' => 'component@node', '4.2' => 'service@node'];
+    return $names[(string) $key] ?? (string) $key;
 }
 
 function gcore_fetch_topology_services(): array {
@@ -280,12 +289,13 @@ function gcore_fetch_topology_services(): array {
 
         foreach ($topology['services'] as $serviceId => $service) {
             $metadata = $service['metadata'] ?? [];
-            $class = gcore_topology_entry_is_site($metadata) ? 'sites' : 'services';
+            $class = gcore_topology_entry_is_site($service) ? 'sites' : 'services';
 
             $serviceInfo = [
                 'id' => $serviceId,
-                'type' => $metadata['type'] ?? 'unknown',
-                'tier' => strtolower((string) ($metadata['tier'] ?? '')),
+                'type' => $metadata['type'] ?? gcore_shape_name($service['shape'] ?? null),
+                'shape' => (string) ($service['shape'] ?? ''),
+                'environment' => (string) ($service['environment'] ?? ''),
                 'description' => $metadata['description'] ?? '',
                 'class' => $class,
             ];
@@ -364,8 +374,8 @@ function gcore_fetch_visitor_analytics(): array {
 
 /**
  * Read live component-liveness heartbeats the daemons write to
- * {geodineum}:gnode:heartbeat:{env}:{component} (SETEX 120s TTL, refreshed
- * ~60s). The per-site cred covers these via its ~{geodineum}:gnode:* grant, so
+ * {<c>}:gnode:heartbeat:{env}:{component}:{node} (SETEX 120s TTL, refreshed
+ * ~60s). The per-site cred covers these via its ~{<c>}:gnode:* grant, so
  * this uses direct GETs (no SCAN). Also reports which PHP libraries are loaded
  * on this host via class_exists. Read-only; degrades silently on NOPERM.
  *
@@ -407,9 +417,9 @@ function gcore_fetch_component_health(): array {
     // found so a mismatch never shows a false "down".
     $envs = array_values(array_unique([$env, 'production', 'all']));
 
-    // The daemons that emit heartbeats. Keyed under {geodineum} to match every
-    // writer's GNODE_TOPOLOGY_NAMESPACE default (and the topology key already
-    // read elsewhere in this file).
+    $constellation = gcore_constellation();
+
+    // The daemons that emit heartbeats, keyed under the constellation.
     $components = [
         'gnode-daemon' => 'gNode daemon',
         'comms'        => 'Geodineum-COMMS',
@@ -417,17 +427,19 @@ function gcore_fetch_component_health(): array {
         'gshield'      => 'gShield',
     ];
 
-    // Node list from the constellation entities the daemons register at every
-    // start ({geodineum}:gnode:constellation:entities — one HGETALL, covered
-    // by the same ~{geodineum}:gnode:* grant, no SCAN). Heartbeat keys carry a
-    // node segment (CONTRACTS/heartbeat.md) precisely so this join can say
-    // WHICH node a component runs on; before it, every node wrote one key and
-    // a dead daemon hid behind a live one's fresh ts.
+    // Nodes are the layer-1 entities of the one topology (one HGETALL, covered by
+    // the ~{c}:gnode:* grant, no SCAN). Heartbeat keys carry a node segment
+    // (CONTRACTS/heartbeat.md) so this join can say WHICH node a component runs on.
     $nodes = [];
     try {
-        $ents = $redis->hGetAll('{geodineum}:gnode:constellation:entities');
+        $ents = $redis->hGetAll('{' . $constellation . '}:gnode:constellation:entities');
         if (is_array($ents)) {
-            $nodes = array_keys($ents);
+            foreach ($ents as $eid => $raw) {
+                $rec = json_decode((string) $raw, true);
+                if (is_array($rec) && (string) ($rec['sh'] ?? '') === '1') {
+                    $nodes[] = (string) $eid;
+                }
+            }
         }
     } catch (\Throwable $ex) {
         $nodes = [];
@@ -449,7 +461,7 @@ function gcore_fetch_component_health(): array {
         $best_ts = null;
         $per_node = [];
         foreach ($envs as $e) {
-            $base = '{geodineum}:gnode:heartbeat:' . $e . ':' . $key;
+            $base = '{' . $constellation . '}:gnode:heartbeat:' . $e . ':' . $key;
             foreach ($nodes as $n) {
                 try {
                     $ts = $extract_ts($redis->get($base . ':' . $n));
@@ -464,19 +476,6 @@ function gcore_fetch_component_health(): array {
                         $best_ts = $ts;
                     }
                 }
-            }
-            // Transitional: the pre-node-segment flat key, still written by
-            // any component not yet restarted on the new code (it self-expires
-            // within 120s of that restart). Also the fallback when the
-            // constellation registry is unreadable. Remove after all
-            // components are confirmed writing node-scoped keys.
-            try {
-                $ts = $extract_ts($redis->get($base));
-            } catch (\Throwable $ex) {
-                $ts = null;
-            }
-            if ($ts !== null && ($best_ts === null || $ts > $best_ts)) {
-                $best_ts = $ts;
             }
         }
 
@@ -798,11 +797,12 @@ function gcore_rest_health(): WP_REST_Response {
 }
 
 /**
- * Get topology data for 3D visualization.
+ * Get topology data for 3D visualization, from the one topology.
  *
  * Query params:
- *   tier=tool    → ecosystem-wide tool pyramid (16D)
- *   tier=service → per-site service topology (30D, default)
+ *   shape=3 (default) → every service (sites, apps, daemons)
+ *   shape=site|app|daemon|component|node → one shape
+ * Each row carries its shape, so a point is labelled by its own shape's schema.
  */
 function gcore_rest_topology(\WP_REST_Request $request): WP_REST_Response {
     try {
@@ -816,67 +816,64 @@ function gcore_rest_topology(\WP_REST_Request $request): WP_REST_Response {
             return new WP_REST_Response(['error' => 'gNode client not available'], 500);
         }
 
-        // Read the live daemon topology snapshot — the HASH at
-        // {geodineum}:gnode:topology:services that each capability-vector
-        // registration maintains. getTopology() reads it via FCALL
-        // GNODE_HASH_HGETALL (the FCALL-only path the per-site cred is
-        // granted). Each entry carries the service's full point vector +
-        // metadata, so we expand the point into named dimensions the
-        // visualizer plots by axis. (The former DESCRIBE_ALL/LIST_SERVICES
-        // path read a string-blob model removed from the daemon.)
-        $tier = $request->get_param('tier') ?: 'service';
+        // One read of the constellation, grouped by layer; rows are labelled by
+        // their own shape's published schema (never one flat map).
+        $shape = strtolower((string) ($request->get_param('shape') ?: '3'));
+        $topology = $gNodeClient->getTopology();
+        $group = match ($shape) {
+            'node', '1' => 'nodes',
+            'component', '2' => 'components',
+            'placement', '4', '4.1', '4.2' => 'placements',
+            default => 'services',
+        };
+        $shapeKeys = ['site' => '3.1', 'app' => '3.2', 'daemon' => '3.3', '3.1' => '3.1', '3.2' => '3.2', '3.3' => '3.3', '4.1' => '4.1', '4.2' => '4.2'];
+        $only = $shapeKeys[$shape] ?? null;
 
-        $topology = method_exists($gNodeClient, 'getTopology')
-            ? $gNodeClient->getTopology()
-            : ['services' => []];
-        $snapshot = is_array($topology['services'] ?? null) ? $topology['services'] : [];
-
-        // Dimension name -> index map from the static schema, to label each
-        // coordinate of the point vector for axis selection.
-        $dimMap = [];
-        try {
-            $schemaRaw = $gNodeClient->fcall('GNODE_TOPOLOGY_GET_SCHEMA', [], []);
-            $schema = is_string($schemaRaw) ? json_decode($schemaRaw, true) : $schemaRaw;
-            if (is_array($schema['dimensions'] ?? null)) {
-                $dimMap = $schema['dimensions'];
-            }
-        } catch (Throwable $e) {
-            // Axes degrade to raw indices if the schema is unavailable.
-        }
-
+        $schemas = [];
         $services = [];
-        foreach ($snapshot as $id => $entry) {
-            $point = is_array($entry['point'] ?? null) ? $entry['point'] : [];
-            $meta  = is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [];
-
-            // The snapshot tags each entry with a tier (e.g. SERVICE); honour
-            // the tool filter so the picker degrades gracefully.
-            if ($tier === 'tool' && strtoupper((string) ($meta['tier'] ?? '')) !== 'TOOL') {
+        foreach ($topology[$group] ?? [] as $id => $entry) {
+            $sh = (string) ($entry['shape'] ?? '');
+            if ($only !== null && $sh !== $only) {
                 continue;
             }
-
-            $isSite = gcore_topology_entry_is_site($meta);
+            if (!array_key_exists($sh, $schemas)) {
+                try {
+                    $schemas[$sh] = $sh !== '' ? $gNodeClient->getPublishedCapabilitySchema($sh) : null;
+                } catch (Throwable $e) {
+                    $schemas[$sh] = null;
+                }
+            }
+            $dimMap = is_array($schemas[$sh]['dimension_index'] ?? null) ? $schemas[$sh]['dimension_index'] : [];
+            $point = is_array($entry['point'] ?? null) ? $entry['point'] : [];
+            $meta  = is_array($entry['metadata'] ?? null) ? $entry['metadata'] : [];
+            $isSite = gcore_topology_entry_is_site($entry);
+            $named = [];
+            foreach ($dimMap as $name => $idx) {
+                if (is_int($idx) && array_key_exists($idx, $point)) {
+                    $named[$name] = $point[$idx];
+                }
+            }
             $row = [
                 'id'           => (string) $id,
-                'type'         => $meta['type'] ?? 'unknown',
-                'service_tier' => $meta['tier'] ?? '',
+                'shape'        => $sh,
+                'shape_name'   => gcore_shape_name($sh),
+                'environment'  => (string) ($entry['environment'] ?? ''),
+                'type'         => $meta['type'] ?? gcore_shape_name($sh),
                 'description'  => $meta['description'] ?? '',
                 'is_site'      => $isSite,
                 'node_class'   => $isSite ? 'site' : 'service',
+                'colour'       => $entry['colour'] ?? [],
+                'load'         => $entry['load'] ?? null,
+                'health'       => $entry['health'] ?? null,
                 'point'        => $point,
-                'point_data'   => ['point' => $point, 'metadata' => $meta],
-            ];
-            foreach ($dimMap as $name => $idx) {
-                if (is_int($idx) && array_key_exists($idx, $point)) {
-                    $row[$name] = $point[$idx];
-                }
-            }
+                'point_data'   => $named + ['point' => $point, 'metadata' => $meta],
+            ] + $named;
             $services[] = $row;
         }
 
         return new WP_REST_Response([
-            'tier'          => $tier,
-            'topology_key'  => '{geodineum}:gnode:topology:services',
+            'shape'         => $shape,
+            'topology_key'  => '{' . gcore_constellation() . '}:gnode:constellation',
             'services'      => $services,
             'service_count' => count($services),
             'timestamp'     => time()
@@ -888,9 +885,10 @@ function gcore_rest_topology(\WP_REST_Request $request): WP_REST_Response {
 }
 
 /**
- * Get topology dimension schema
+ * The per-shape axis schema the daemon published (`?shape=`, default site).
+ * `dimensions` is axis name → slot; `values` is axis → word → fraction.
  */
-function gcore_rest_topology_schema(): WP_REST_Response {
+function gcore_rest_topology_schema(\WP_REST_Request $request): WP_REST_Response {
     try {
         // Canonical admin accessor — gCore is frontend-only-initialized.
         $gNodeClient = function_exists('gcore_get_admin_gnode_client')
@@ -900,16 +898,21 @@ function gcore_rest_topology_schema(): WP_REST_Response {
             return new WP_REST_Response(['error' => 'gNode client not available'], 500);
         }
 
-        // Get the full schema with dimension names and values
-        $result = $gNodeClient->fcall('GNODE_TOPOLOGY_GET_SCHEMA', [], []);
-
-        if (!$result) {
-            return new WP_REST_Response(['error' => 'Failed to fetch schema'], 500);
+        $shape = (string) ($request->get_param('shape') ?: 'site');
+        $schema = $gNodeClient->getPublishedCapabilitySchema($shape);
+        if (!is_array($schema)) {
+            return new WP_REST_Response(['error' => 'No schema published for shape ' . $shape], 503);
         }
 
-        $schema = is_string($result) ? json_decode($result, true) : $result;
-
-        return new WP_REST_Response($schema, 200);
+        return new WP_REST_Response([
+            'schema_version' => $schema['schema_version'] ?? null,
+            'shape'          => $schema['shape'] ?? $shape,
+            'name'           => $schema['name'] ?? gcore_shape_name($shape),
+            'width'          => $schema['width'] ?? 24,
+            'dimensions'     => $schema['dimension_index'] ?? [],
+            'values'         => $schema['dimension_values'] ?? [],
+            'slots'          => $schema['slots'] ?? [],
+        ], 200);
 
     } catch (Throwable $e) {
         return new WP_REST_Response(['error' => $e->getMessage()], 500);
@@ -1852,9 +1855,9 @@ function gcore_admin_topology_page(): void {
 
             // Fetch data from REST API
             async function fetchTopology() {
-                const tier = document.getElementById('topology-tier')?.value || 'service';
+                const shape = document.getElementById('topology-tier')?.value || '3';
                 try {
-                    const response = await fetch(`${REST_URL}/topology?tier=${encodeURIComponent(tier)}`, {
+                    const response = await fetch(`${REST_URL}/topology?shape=${encodeURIComponent(shape)}`, {
                         headers: { 'X-WP-Nonce': NONCE }
                     });
                     return await response.json();

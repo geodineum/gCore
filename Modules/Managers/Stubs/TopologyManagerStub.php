@@ -99,22 +99,16 @@ class TopologyManagerStub implements TopologyManagerInterface
      */
     private function initializeDefaultDimensions(): void
     {
-        // Minimal dimension info for display, in the daemon's own order
-        // (service_schema.yaml v4.0). The names and positions must match the
-        // daemon: a display that labels a coordinate with another axis's name is
-        // worse than one that shows the bare index.
+        // The site shape (3.1) of the one topology, in slot order: header, the service
+        // body, the derived slots. A display that labels a slot with another axis's
+        // name is worse than one that shows the bare index.
         $defaultDims = [
-            // declared, hashed into the bucket key (0-15)
-            'protocol', 'api_version', 'contract_stability',                          // 0-2
-            'clearance_required', 'auth_method', 'data_sensitivity',                  // 3-5
-            'service_scope', 'domain_primary', 'domain_secondary', 'specialization',  // 6-9
-            'throughput_tier', 'latency_class', 'reliability_tier',                   // 10-12
-            'pipeline_stage', 'execution_priority', 'environment',                    // 13-15
-            // derived by the daemon's sampler, ranked, never hashed (16-18)
-            'current_load', 'health_status', 'lifecycle_state',                       // 16-18
-            // storage: stored and returned, refused in a query (19-22)
-            'native_format', 'implementation_language', 'data_persistence',           // 19-21
-            'service_tier'                                                             // 22
+            0 => 'layer', 1 => 'environment',
+            2 => 'protocol', 3 => 'auth_method', 4 => 'service_scope', 5 => 'domain',
+            6 => 'contract_stability', 7 => 'contract_version', 8 => 'throughput_tier',
+            9 => 'latency_class', 10 => 'reliability_tier', 11 => 'execution_priority',
+            12 => 'implementation_language', 13 => 'native_format', 14 => 'fundamentality',
+            16 => 'load', 17 => 'health', 18 => 'lifecycle', 19 => 'instances',
         ];
 
         foreach ($defaultDims as $index => $name) {
@@ -155,7 +149,7 @@ class TopologyManagerStub implements TopologyManagerInterface
     /**
      * Discover services (stub: returns empty)
      */
-    public function discoverServices(array $requirements, int $limit = 10, int $distance = 0): array
+    public function discoverServices(array $requirements, int $limit = 10, string $layer = '3'): array
     {
         return [];
     }
@@ -180,31 +174,11 @@ class TopologyManagerStub implements TopologyManagerInterface
     }
 
     /**
-     * Calculate distance (stub: returns zero distance)
-     */
-    public function calculateDistance(array $service1Capabilities, array $service2Capabilities): array
-    {
-        return [
-            'distance' => 0,
-            'dimensions' => [],
-            'stub_mode' => true,
-        ];
-    }
-
-    /**
      * Get load sequence (stub: returns empty)
      */
     public function getLoadSequence(string $group = 'default'): array
     {
         return [];
-    }
-
-    /**
-     * Store topology (stub: returns false)
-     */
-    public function storeTopology(array $topology, int $dimensions = 9): bool
-    {
-        return false;
     }
 
     // =========================================================================
@@ -259,7 +233,7 @@ class TopologyManagerStub implements TopologyManagerInterface
             'dimensions' => [
                 'x' => $this->getDimension($selectedDimensions['x'] ?? 'protocol'),
                 'y' => $this->getDimension($selectedDimensions['y'] ?? 'throughput_tier'),
-                'z' => $this->getDimension($selectedDimensions['z'] ?? 'current_load'),
+                'z' => $this->getDimension($selectedDimensions['z'] ?? 'load'),
             ],
             'statistics' => [
                 'total_services' => 0,

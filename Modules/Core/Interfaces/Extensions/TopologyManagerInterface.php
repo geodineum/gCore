@@ -54,7 +54,7 @@ interface TopologyManagerInterface extends ModuleInterface
      * @param int $distance Maximum distance in capability space (0 = exact match)
      * @return array Discovered services with distances
      */
-    public function discoverServices(array $requirements, int $limit = 10, int $distance = 0): array;
+    public function discoverServices(array $requirements, int $limit = 10, string $layer = '3'): array;
 
     /**
      * Find services matching requirements
@@ -73,30 +73,12 @@ interface TopologyManagerInterface extends ModuleInterface
     public function getServiceDetails(string $serviceId): array;
 
     /**
-     * Calculate distance between two services in capability space
-     *
-     * @param array $service1Capabilities First service capabilities
-     * @param array $service2Capabilities Second service capabilities
-     * @return array Distance information ['distance' => float, 'dimensions' => array]
-     */
-    public function calculateDistance(array $service1Capabilities, array $service2Capabilities): array;
-
-    /**
      * Get optimal load sequence for services
      *
      * @param string $group Service group name
      * @return array Ordered service list
      */
     public function getLoadSequence(string $group = 'default'): array;
-
-    /**
-     * Store complete topology
-     *
-     * @param array $topology Topology data
-     * @param int $dimensions Number of dimensions
-     * @return bool Success status
-     */
-    public function storeTopology(array $topology, int $dimensions = 9): bool;
 
     // =========================================================================
     // DIMENSION MANAGEMENT
@@ -156,8 +138,8 @@ interface TopologyManagerInterface extends ModuleInterface
      * Only registers with gNode if the configuration has changed.
      * Prevents unnecessary re-registration while detecting config changes.
      *
-     * @deprecated Local service registration is now handled by the gNode daemon's
-     *             periodic service discovery (reads geometric_topology.yaml).
+     * @deprecated Local service registration is handled by TopologyManagerPro's
+     *             registration by name on the one topology (the manifest `gnode:` block).
      *             This method remains for remote services or CLI one-time registration only.
      *
      * @param array $capabilities Capability vector for gNode topology
@@ -170,8 +152,8 @@ interface TopologyManagerInterface extends ModuleInterface
     /**
      * Force re-registration (clears hash and registers)
      *
-     * @deprecated Local service registration is now handled by the gNode daemon's
-     *             periodic service discovery (reads geometric_topology.yaml).
+     * @deprecated Local service registration is handled by TopologyManagerPro's
+     *             registration by name on the one topology (the manifest `gnode:` block).
      *             This method remains for remote services or CLI one-time registration only.
      *
      * @param array $capabilities Optional capability override
@@ -190,8 +172,8 @@ interface TopologyManagerInterface extends ModuleInterface
     /**
      * Update capabilities dynamically (without full re-registration)
      *
-     * @deprecated Local service registration is now handled by the gNode daemon's
-     *             periodic service discovery (reads geometric_topology.yaml).
+     * @deprecated Local service registration is handled by TopologyManagerPro's
+     *             registration by name on the one topology (the manifest `gnode:` block).
      *
      * @param array $capabilities New or updated capabilities
      * @param array $metadata Optional metadata updates
@@ -209,8 +191,8 @@ interface TopologyManagerInterface extends ModuleInterface
     /**
      * Reload configuration and re-register if changed
      *
-     * @deprecated Local service registration is now handled by the gNode daemon's
-     *             periodic service discovery (reads geometric_topology.yaml).
+     * @deprecated Local service registration is handled by TopologyManagerPro's
+     *             registration by name on the one topology (the manifest `gnode:` block).
      *
      * @param callable|null $configLoader Optional callback to load fresh config
      * @return array Result with 'changed' and 'registered' status

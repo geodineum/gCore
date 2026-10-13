@@ -224,7 +224,7 @@ Evidence: `Modules/Core/Seams.php`; `bootstrap.php` (Pro overlay);
 
 ### 3.2 TopologyManager
 - **Access:** `getService('TopologyManager')`. Stub: `Stubs/TopologyManagerStub.php`.
-- **CH1 stub:** discovery/registration return `[]`/`false`; `getDimensions()` returns 23 read-only stub dimensions for UI only; visualization returns empty nodes/edges.
+- **CH1 stub:** discovery/registration return `[]`/`false`; `getDimensions()` returns the one topology's site-shape axes (24 slots, read-only) for UI only; visualization returns empty nodes/edges.
 - **Pro (CH2):** `gCore\Topology\TopologyManagerPro`.
 
 ### 3.3 SEOManager
@@ -284,7 +284,7 @@ Evidence: `Modules/Core/Seams.php`; `bootstrap.php` (Pro overlay);
 These have `Base/` dirs (so 15 Base dirs total) and remain PUBLIC build-with on the author's frame, but their **primary** lifecycle is install/deploy. Both also expose runtime-callable APIs, so neither is purely lifecycle.
 
 ### 4.1 InstallManager
-- **Access:** `InstallManager::getInstance()` **ONLY** — no `services.yaml` entry and `loadServiceTopology` does not merge `geometric_topology.yaml`'s services, so `getService('InstallManager')` is **not wired in CH1** and throws. Source: `Base/InstallManager/InstallManager.php`. Registry entry at `geometric_topology.yaml`. Not in `register.php` (core-loaded, not extension-resolved).
+- **Access:** `InstallManager::getInstance()` **ONLY** — no `services.yaml` entry so `getService('InstallManager')` is **not wired in CH1** and throws. Source: `Base/InstallManager/InstallManager.php`. Not in `register.php` (core-loaded, not extension-resolved).
 - **Role:** extension install, file-integrity verification vs geodineum.com registry, warranty tracking, gNode distributed locking.
 - **Runtime-callable APIs builders use:** `verifyIntegrity(bool $force=false): array`; `getWarrantyInfo(): array`; `getInstalledExtensions(): array`; `getAvailableExtensions(?string $type=null): array`; `validateLicense(string $licenseKey, ?string $product=null): bool`; `subscribeToNotifications(callable $callback): bool`.
 - **Install/deploy APIs:** `installExtension`, `updateExtension`, `setupEnvironment`, `validateEnvironment`.

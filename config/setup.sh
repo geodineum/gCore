@@ -177,10 +177,10 @@ EOF
         echo -e "${GREEN}  ✓ Credential file exists: $CRED_FILE${NC}"
     elif [[ -f "$LEGACY_CRED_FILE" ]]; then
         echo -e "${YELLOW}  ⚠ Previously, credential found at: $LEGACY_CRED_FILE${NC}"
-        echo -e "    Run gNode/scripts/provision-gnode-site.sh $SITE_ID to migrate."
+        echo -e "    The Geodineum installer mints the per-site credential when the site is onboarded."
     else
         echo -e "${YELLOW}  ! Warning: Credential file not found at: $CRED_FILE${NC}"
-        echo -e "    Create it with: sudo /opt/geodineum/gNode/scripts/provision-gnode-site.sh $SITE_ID"
+        echo -e "    The Geodineum installer mints it when the site is onboarded (one read-only grant on {<constellation>}:gnode:*)."
     fi
 fi
 

@@ -1644,7 +1644,7 @@ class gCore implements ModuleInterface {
     /**
      * Find service based on capability requirements
      * 
-     * @param array $capabilities Required capabilities with minimum values
+     * @param array $capabilities Axis name => word (facet) or [lo, hi] range, on the component shape
      * @return object Service instance
      * @throws \RuntimeException If no matching service is found
      * @api
@@ -1654,15 +1654,13 @@ class gCore implements ModuleInterface {
         if ($this->hasService('gnode_client')) {
             try {
                 $gNodeClient = $this->getService('gnode_client');
-                $discovered = $gNodeClient->geometricDiscover($capabilities);
+                // Components are layer 2 of the one topology; their ids are bare names.
+                $discovered = $gNodeClient->geometricDiscover($capabilities, 10, 'component');
 
                 if (!empty($discovered)) {
-                    // Map discovered IDs to gCore services, nearest first
                     foreach ($discovered as $match) {
-                        $serviceId = (string) ($match['service_id'] ?? '');
-                        // Extract service name from "tool:ServiceName" format
-                        if (preg_match('/^tool:(.+)$/', $serviceId, $matches)) {
-                            $serviceName = $matches[1];
+                        $serviceName = preg_replace('/^tool:/', '', (string) ($match['service_id'] ?? ''));
+                        if ($serviceName !== '') {
                             if ($this->hasService($serviceName)) {
                                 $this->logCoreEvent('info', 'Found service by capabilities', [
                                     'capabilities' => $capabilities,

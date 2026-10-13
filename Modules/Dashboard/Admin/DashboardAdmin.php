@@ -597,18 +597,18 @@ class DashboardAdmin
             echo '<table class="widefat striped" style="max-width: 900px; margin-bottom: 1.5em;">';
             echo '<thead><tr>'
                 . '<th>' . esc_html__('Service', 'gcore') . '</th>'
-                . '<th>' . esc_html__('Tier', 'gcore') . '</th>'
+                . '<th>' . esc_html__('Shape', 'gcore') . '</th>'
                 . '<th>' . esc_html__('Type', 'gcore') . '</th>'
                 . '</tr></thead><tbody>';
 
             ksort($services);
             foreach ($services as $id => $svc) {
                 $meta = isset($svc['metadata']) && is_array($svc['metadata']) ? $svc['metadata'] : [];
-                $tier = (string) ($meta['tier'] ?? '—');
+                $shape = function_exists('gcore_shape_name') ? gcore_shape_name($svc['shape'] ?? null) : (string) ($svc['shape'] ?? '—');
                 $type = (string) ($meta['type'] ?? '—');
                 echo '<tr>'
                     . '<td><code>' . esc_html((string) $id) . '</code></td>'
-                    . '<td>' . esc_html($tier) . '</td>'
+                    . '<td>' . esc_html($shape) . '</td>'
                     . '<td>' . esc_html($type) . '</td>'
                     . '</tr>';
             }
@@ -666,7 +666,7 @@ class DashboardAdmin
                 'label' => (string) $id,
                 'role'  => 'component',
                 'type'  => (string) ($meta['type'] ?? ''),
-                'tier'  => (string) ($meta['tier'] ?? ''),
+                'shape' => (string) ($svc['shape'] ?? ''),
             ];
             $edges[] = ['from' => (string) $id, 'to' => 'gnode'];
         }
