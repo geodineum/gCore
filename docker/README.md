@@ -13,7 +13,6 @@ docker-compose up -d
 This will build and start the gCore container with all necessary components:
 - PHP 8.1 with required extensions (including FFI)
 - Redis/ValKey for backend storage
-- Rust tools for building the geometric topology library
 - PHP development server on port 8000
 
 ## Configuration Options

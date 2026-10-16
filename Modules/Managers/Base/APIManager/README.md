@@ -4,21 +4,17 @@ The APIManager is a key component of the gCore framework, providing REST API fun
 
 ## Dynamic Trait Loading
 
-Starting with version 3.0.0, the APIManager now uses the geometric topology-based trait loading system which provides:
+The APIManager loads its traits from configuration:
 
-1. **Dynamic Capability-Based Trait Loading**: Traits are loaded based on capability requirements and service topology.
-2. **Configuration-Driven Traits**: Traits are configured via YAML files rather than hardcoded in the class.
-3. **N-Dimensional Capability Space**: Traits are positioned in n-dimensional capability space for mathematical discovery.
-4. **Simplified Dependency Management**: Automatic management of trait dependencies.
-5. **Improved Performance**: Optimized trait loading with capability vector calculations.
+1. **Configuration-Driven Traits**: Traits are configured via YAML files rather than hardcoded in the class.
+2. **Simplified Dependency Management**: Automatic management of trait dependencies.
 
 ## Configuration
 
-Traits are configured at three levels:
+Traits are configured at two levels:
 
 1. **Global API Configuration**: `/config/managers/APIManager.yaml`
 2. **Trait-Specific Configuration**: `/config/traits/APIManager/{traitName}.yaml`
-3. **Service Topology**: `/config/service_topology.yaml`
 
 ### Example Configuration
 
@@ -127,7 +123,6 @@ You can create custom traits for the APIManager by:
 
 1. Creating a trait PHP file in the Traits directory
 2. Creating a trait configuration YAML file
-3. Registering the trait in service_topology.yaml
-4. Updating schemas for validation
+3. Updating schemas for validation
 
 See the documentation on creating custom traits for more details.

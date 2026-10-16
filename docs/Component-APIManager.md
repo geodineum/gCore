@@ -15,7 +15,7 @@ The APIManager serves as the core REST API interface for the gCore framework, pr
 - **Validation**: request validation system
 - **Metrics Collection**: Detailed performance and usage metrics
 - **Trait-Based Architecture**: Modular functionality through traits
-- **Geometric Topology Integration**: Capability-based discovery
+- **Topology integration**: the site's declared capabilities are registered by name on the one topology
 
 ## Architecture
 

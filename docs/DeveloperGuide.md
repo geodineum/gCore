@@ -2,7 +2,7 @@
 
 ## Introduction
 
-gCore is a PHP framework built on a mathematical foundation of n-dimensional capability space. It provides a flexible architecture for building secure applications with a focus on scalability and maintainability.
+gCore is a PHP framework whose sites register on their constellation's one topology. It provides a flexible architecture for building secure applications with a focus on scalability and maintainability.
 
 This guide will help you quickly understand gCore's capabilities and get started building applications with it.
 
@@ -15,7 +15,7 @@ gCore's architecture is centered around four foundational managers that form wha
 3. **SecurityManager**: Authentication, authorization, and security features
 4. **APIManager**: API endpoint management with middleware support
 
-These managers work together within an novel mathematical model that represents services as points in n-dimensional capability space, enabling dynamic service discovery and feature composition.
+These managers work together behind a single container, and the sites they serve register on the constellation's one topology for cross-service discovery.
 
 ## Getting Started
 
@@ -193,23 +193,16 @@ $apiManager->start();
 
 ## Advanced Features
 
-### Geometric Topology System
+### The One Topology
 
-gCore's n-dimensional capability space allows services to be discovered based on their capabilities:
+A constellation has one topology in ValKey. A site declares itself by name and finds other services by facet and axis range; the gNode daemon encodes every coordinate:
 
 ```php
-// Register a service with capability dimensions
-$topology->registerService('MyService', [
-    'caching' => 0.8,
-    'security' => 0.7,
-    'api' => 0.9
-]);
+$topology = gCore::getService('TopologyManager');
 
-// Discover services based on capability requirements
-$services = $topology->findServices([
-    'caching' => 0.6,  // Requires at least 0.6 in caching dimension
-    'security' => 0.5  // Requires at least 0.5 in security dimension
-]);
+$topology->smartRegister(['protocol' => 'http'], ['name' => 'MyService']);
+
+$services = $topology->discoverServices(['protocol' => ['resp3']], 10, 'app');
 ```
 
 ### ValKey Script System
@@ -448,7 +441,7 @@ The APIManager supports multiple server modes:
 
 ## Conclusion
 
-The gCore framework offers a mathematical foundation for building modern applications. By using its geometric topology system, manager quartet, and optimized ValKey integration, you can build scalable applications with clean architectural patterns.
+By using the one topology, the manager quartet, and optimized ValKey integration, you can build scalable applications with clean architectural patterns.
 
 Start building with the Source/MyApp.php template, and explore the examples in examples/message_broker for working implementations that demonstrate framework integration.
 

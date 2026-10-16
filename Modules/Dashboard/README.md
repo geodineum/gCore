@@ -15,7 +15,7 @@ Pages shipped:
 | Slug                  | Page                          | Purpose                                                      |
 | --------------------- | ----------------------------- | ------------------------------------------------------------ |
 | `gcore-dashboard`     | Status (extended)             | gNode + framework + topology + sites + cache health, at a glance |
-| `gcore-topology`      | Topology 3D                   | Three.js 3D viz of the 23-dim service topology               |
+| `gcore-topology`      | Topology 3D                   | Three.js 3D view of the constellation's one topology               |
 | `gcore-sites`         | Sites                         | Per-site card grid + detail (env, theme, cache hit-rate)     |
 | `gcore-services-list` | Services                      | Flat tabular list with per-service request counters          |
 | `gcore-streams-keys`  | Streams & Keys                | SCAN-cursor explorer with shape-aware render                 |

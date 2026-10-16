@@ -172,16 +172,7 @@ $result = $resources->storeTemplateFragment('header', $headerContent,
 ```
 
 #### `discoverTemplatesByCapability(array $capabilities, int $limit = 10): array`
-Discover templates by capability using gNode geometric discovery.
-- **Returns**: Array of matching template metadata
-- **Throws**: `StorageException` if gNode not available
-
-```php
-$templates = $resources->discoverTemplatesByCapability([
-    'e_commerce' => 0.8,
-    'responsive' => 0.9
-]);
-```
+Retired with the one topology: the gNode-CMS template-discovery commands no longer exist on the daemon, so this call is not served. Look templates up by id (`storeTemplateFragment`, `renderTemplateString`).
 
 #### `renderTemplateString(string $template, array $variables = [], array $config = []): string`
 Render template string with variables using gNode.

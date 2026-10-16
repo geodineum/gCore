@@ -83,7 +83,6 @@ Services:
   ErrorManager        [active] Uptime: 3600.00 seconds
   APIManager          [active] Uptime: 3600.00 seconds
 
-Capability Dimensions: 12
 Active Nodes: 1
 ```
 
@@ -154,7 +153,7 @@ Available actions:
 - `visualize`: Show service topology visualization
 - `discover`: Discover services based on requirements
 - `path`: Find service invocation path
-- `dimensions`: List capability dimensions
+- `dimensions`: List the axes of the topology
 
 Examples:
 
@@ -162,10 +161,10 @@ Examples:
 # Visualize service topology
 php gCoreCLI.php topology visualize
 
-# Discover services with specific capabilities
-php gCoreCLI.php topology discover --capability-logging=3.0 --capability-caching=2.0
+# Discover services (each --capability-<axis>=<value> is a requirement)
+php gCoreCLI.php topology discover --capability-protocol=resp3
 
-# List all capability dimensions
+# List the axes of the topology
 php gCoreCLI.php topology dimensions
 ```
 
@@ -283,8 +282,6 @@ The checker looks for:
    - `checkCapability()`
 
 4. **Topology Functions**:
-   - `geometric_discover()`
-   - `geometric_register()`
    - `discover_services()`
 
 ### Example Output
@@ -310,7 +307,7 @@ managers (2):
   - APIManager
 
 functions (1):
-  - geometric_discover
+  - discover_services
 
 Total distinct capability indicators found: 8
 

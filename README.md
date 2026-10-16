@@ -66,7 +66,7 @@ Inert until their package is installed; calling one returns a `stub_mode` marker
 | MetricsManager | `geodineum/gcore-metrics` | Full metric detail + history |
 | OptimizationManager | `geodineum/gcore-optimization` | Real asset/DB optimization passes |
 | ManifestManager | `geodineum/gcore-manifest` | Full PWA manifest + install tracking |
-| TopologyManager | `geodineum/gcore-topology` | Live geometric topology + visualization |
+| TopologyManager | `geodineum/gcore-topology` | Live one-topology view + visualization |
 | CommsManager | `geodineum/gcore-comms` | Programmatic multi-channel dispatch |
 | EcommerceManager | *(stub only - pluggable via `EcommerceAdapterInterface`)* | - |
 
@@ -76,7 +76,7 @@ Inert until their package is installed; calling one returns a `stub_mode` marker
 
 - **Service container** - lazy-loads and lifecycles a roster of first-party managers behind a single `getService()` call, in dependency order.
 - **ValKey-native primitives** - distributed cache, state coordination, security (roles, CSRF, JWT, API keys, tiered rate-limiting), error tracking, versioning, cookie consent, asset bundling, `.htaccess` / IP blocking, and a REST layer.
-- **Geometric service discovery** - services are found by capability vector, not by name: nearest-neighbour search in the gNode daemon when present, a local capability→manager heuristic otherwise.
+- **Service discovery** - cross-service lookup queries the constellation's one topology by facet and axis range through the gNode daemon; in-process lookup of a manager uses a local capability→manager map.
 - **Open-core** - eleven manager slots ship as inert stubs and light up when their Chapter-2 `geodineum/gcore-<name>` package is installed, with no change in the calling code.
 - **Per-site isolation** - every key is namespaced by site, so one ValKey backend serves many sites.
 

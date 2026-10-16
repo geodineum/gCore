@@ -226,7 +226,7 @@ Get stats combining local and gNode daemon metrics.
 Get full status including initialization state, storage type, mode, and capabilities.
 
 #### `getCapabilityVector(): array`
-Get capability vector for geometric service discovery.
+Get the manager's declared capabilities (sent by name when the site registers on the one topology).
 
 #### `getConfig(): array`
 Get current configuration.

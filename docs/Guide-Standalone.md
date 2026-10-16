@@ -280,10 +280,10 @@ $gNode->batchCacheSet([
     'key2' => ['value' => 'val2', 'ttl' => 300],
 ]);
 
-// Geometric topology discovery
-$services = $gNode->geometricDiscover([
-    'security' => 0.8,
-    'cache' => 0.7,
+// Discovery on the one topology: layer, facets, axis ranges
+$services = $gNode->query([
+    'layer' => '3',
+    'facets' => ['protocol' => ['resp3']],
 ]);
 
 // Template rendering (via gNode daemon)
@@ -449,7 +449,7 @@ For best performance:
 After setting up gCore in standalone mode:
 
 1. Explore the example applications in `/examples`
-2. Set up geometric topology for service discovery
+2. Register the site on the constellation's one topology
 3. Implement rate limiting for API endpoints
 4. Configure monitoring and alerting
 5. Create a deployment strategy for production

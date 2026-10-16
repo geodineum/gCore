@@ -235,7 +235,7 @@ Get current gNode-Client instance.
 ### Capability Discovery
 
 #### `getCapabilityVector(): array`
-Get capability vector for geometric service discovery.
+Get the manager's declared capabilities (sent by name when the site registers on the one topology).
 
 ## Default Roles
 

@@ -29,12 +29,6 @@ cd /path/to/gCore
 composer install
 ```
 
-3. Build the Rust GeometricTopology library:
-
-```bash
-./compile.sh
-```
-
 ## Testing the Managers
 
 Before running the message broker, it's important to test that all four base managers are working correctly:

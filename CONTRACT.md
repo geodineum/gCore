@@ -39,7 +39,7 @@ All other managers are reached by **class name** (`getService('CookieManager')`)
 
 | Method | Signature | Source |
 |---|---|---|
-| `findServiceByCapabilities` | `findServiceByCapabilities(array $capabilities): object` — gNode `geometricDiscover()` if available, else local capability→service map | `gCore.php` |
+| `findServiceByCapabilities` | `findServiceByCapabilities(array $capabilities): object` — a query over the component layer of the one topology (`geometricDiscover(…, 'component')`) if gNode-Client is available, else local capability→service map | `gCore.php` |
 | `registerServiceCapabilities` | `registerServiceCapabilities(string $serviceName, array $capabilities, array $metadata = []): bool` | `gCore.php` |
 | `hasService` / `isServiceActive` | `hasService(string $service): bool` / `isServiceActive(string $service): bool` | `gCore.php` |
 | `getServiceStatus` / `getStatus` | `getServiceStatus(string $service): array` / `getStatus(): array` | `gCore.php` |
@@ -319,7 +319,7 @@ The manager **class** is the API; the helper/trait/adapter/value-object classes 
 ## 6. CONSUMES / REQUIRES & ADHERENCE
 
 ### 6.1 Consumes / requires
-- **gNode-Client** (`gCore\gNode\gNodeClient`, PSR-4, separate package): injected early at `gCore.php` via `forSite(site_id, environment, overrides)`; provides ValKey storage, FCALL surface, broadcast, streams, format manager, capability dimensions. Optional per site — absence is a logged warning, gCore continues on YAML topology — but FormatManager (`gnode_required=true`) and all extension-gated methods fail without it.
+- **gNode-Client** (`gCore\gNode\gNodeClient`, PSR-4, separate package): injected early at `gCore.php` via `forSite(site_id, environment, overrides)`; provides ValKey storage, FCALL surface, broadcast, streams, format manager, the published axes of a shape. Optional per site — absence is a logged warning, gCore continues on YAML topology — but FormatManager (`gnode_required=true`) and all extension-gated methods fail without it.
 - **ValKey** (Redis-compatible, via gNode-Client or free-tier `StorageInterface` adapter): the common backend. Per-site topology key `{site_id}:gcore:config:services`; manager config/secrets in `{site_id}:gcore:config:<Manager>` / `:secrets:<Manager>` via `GCORE_MGR_CONFIG_*` / `GCORE_MGR_SECRETS_*` Lua functions.
 - **WordPress** (optional, `defined('ABSPATH')`): CookieManager/WordPressManager/VersionManager/StateManager register hooks and use `$wpdb`/options; UI and DB features no-op outside WP.
 

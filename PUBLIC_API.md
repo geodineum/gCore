@@ -200,7 +200,7 @@
 - `batchLoadAssets(array $assetIds): array` — Batch load multiple assets using gNode executeBatch
 - `optimizeAsset(string $content, string $type, array $options = []): string` — Optimize an asset (minify, compress)
 - `storeTemplateFragment( string $templateId, string $content, array $dependencies = [], array $variables = [], ?int $ttl = null ): array` — Store template fragment using native gNode templateFragment method
-- `discoverTemplatesByCapability(array $capabilities, int $limit = 10): array` — Discover templates by capability using gNode geometric discovery
+- `discoverTemplatesByCapability(array $capabilities, int $limit = 10): array` — Retired with the one topology: the daemon no longer serves template discovery
 - `renderTemplateString( string $template, array $variables = [], array $config = [] ): string` — Render template string with variables using gNode
 - `loadResource(string $url, string $type = 'auto'): ?array` — Load a resource by URL or identifier
 - `preloadResources(array $resources): array` — Preload resources for performance

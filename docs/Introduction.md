@@ -2,7 +2,7 @@
 
 ## Overview
 
-gCore is a distributed PHP framework designed to provide service management with zero local state and geometric topology-based capability discovery. It offers WordPress integration capabilities while maintaining compatibility with standalone PHP applications, Docker environments, and CLI tools.
+gCore is a distributed PHP framework designed to provide service management with zero local state and discovery on the constellation's one topology. It offers WordPress integration capabilities while maintaining compatibility with standalone PHP applications, Docker environments, and CLI tools.
 
 The core of the framework is composed of four main managers (the Manager Quartet):
 - **SecurityManager** - Manages security, authentication, data validation, and cryptographic operations
@@ -14,12 +14,12 @@ All managers follow a trait-based architecture where functionality can be dynami
 
 ## System Architecture
 
-The gCore framework uses a geometric topology approach to service discovery and capability management. Services are represented as points in an n-dimensional capability space, allowing for mathematical precision in service matching and discovery.
+gCore sites register on the constellation's one topology and find other services by facet and axis range through the gNode daemon.
 
 Key architectural principles:
 - **Zero Local State**: All services maintain state in ValKey (Redis fork) for true distribution
 - **Trait Composition**: Features are implemented as traits that can be loaded dynamically
-- **Mathematical Approach**: Service discovery uses geometric principles for O(1) operations
+- **One topology**: Services are declared by name and found by facet and axis range; the daemon encodes every coordinate
 - **Multi-site Support**: Built-in isolation for multi-tenant/multi-site deployments
 - **Security-First**: Security is a core architectural component, not an afterthought
 
@@ -397,41 +397,19 @@ gCore uses a hierarchical configuration system with YAML files. Configuration ca
 3. Environment-specific configuration
 4. Default configuration
 
-## Capability-based Service Discovery
+## Service Discovery
 
-gCore uses a capability-based service discovery system, powered by the geometric topology component. Services are represented as points in an n-dimensional capability space, with capabilities as dimensions. 
-
-This mathematical approach allows for:
-1. O(1) service discovery based on required capabilities
-2. Precise service matching with capability vectors
-3. Automatic scaling with capability manifolds
-4. Zero-trust verification through capability boundaries
-
-### Using the Geometric Topology
+A constellation has one topology, `{<c>}:gnode:constellation`, held in ValKey and maintained by the gNode daemon. A site declares itself on it by name (a shape, an environment and axis words); the daemon encodes the declaration. Cross-service lookup is a query over a layer by facet and axis range.
 
 ```php
-// Initialize topology
-$topology = new \gCore\Modules\Core\Topology\GeometricTopology();
-$topology->initialize([
-    'dimensions' => 5,
-    'grid_size' => 10
-]);
+$topology = gCore::getService('TopologyManager');
 
-// Register service with capabilities
-$capabilities = [
-    'api' => 0.8,
-    'auth' => 0.9,
-    'cache' => 0.7
-];
-$topology->registerService('service1', $capabilities);
+$topology->smartRegister(['protocol' => 'http'], ['name' => 'Shop']);
 
-// Find services by required capabilities
-$requirements = [
-    'api' => 0.5,
-    'auth' => 0.5
-];
-$services = $topology->findServices($requirements);
+$apps = $topology->discoverServices(['protocol' => ['resp3']], 5, 'app');
 ```
+
+Resolving a manager inside the process (`getService`) is a local lookup and does not touch the topology.
 
 ## WordPress Integration
 
@@ -464,7 +442,7 @@ add_action('save_post', [$apiManager, 'invalidateCacheOnSave']);
 
 ## Multi-tenant / Multi-site Support
 
-gCore provides multi-tenant isolation through site-specific prefixing and geometric boundary transforms.
+gCore provides multi-tenant isolation through site-specific key prefixing.
 
 ### Multi-tenant Features
 

@@ -43,7 +43,7 @@ base-vs-stub resolution = ExtensionResolver::resolve() (ExtensionResolver.php), 
   ∀ $baseManagers: 'stub' slot = Base class ⇒ absent-Pro yields FULL Base impl (NOT degraded).
   ∀ $stubOnlyManagers: 'stub' slot = no-op Stub.
   THIS single rule defines 'CH1 status'.
-design philosophy: bootstrap-once-per-request singleton; stateless components, state in ValKey; capability-vector geometric discovery (gCore.php); init order = services.yaml `priority` ASCENDING (7 required:true eager + gnode_client early, rest lazy).
+design philosophy: bootstrap-once-per-request singleton; stateless components, state in ValKey; component lookup on the one topology via gNode-Client, local capability→service map otherwise (gCore.php); init order = services.yaml `priority` ASCENDING (7 required:true eager + gnode_client early, rest lazy).
 dep pre-init = TopologyParser::resolveDependencies (gCore.php, sole call site) = HARDCODED 4-manager graph (Error/Cache/Security/API), [] ∀ others ⇒ services.yaml `dependencies:` is ADVISORY. NO runtime circular detection; cycle logic (graph + toposort + CircularDependencyException + strict/relaxed/auto-fix) = DependencyResolver+DependencyBundle, CLI-only (admin/cli/dependency-resolver.php).
 
 ## ::IO
