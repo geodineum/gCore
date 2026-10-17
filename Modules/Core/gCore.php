@@ -30,7 +30,7 @@ if (!defined('GCORE_CONFIG_PATH')) {
  */
 
 class gCore implements ModuleInterface {
-    private const CORE_VERSION = '0.1.0';
+    private const CORE_VERSION = '0.2.0';
     
     /**
      * @var ConfigLoader
