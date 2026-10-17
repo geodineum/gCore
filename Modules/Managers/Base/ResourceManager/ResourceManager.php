@@ -637,48 +637,6 @@ class ResourceManager implements ModuleInterface {
     }
 
     /**
-     * Discover templates by capability using gNode geometric discovery
-     *
-     * @param array $capabilities Required capabilities
-     * @param int $limit Maximum number of results
-     * @return array Array of matching template metadata
-     * @throws StorageException If gNode not available
-     * @api
-     */
-    public function discoverTemplatesByCapability(array $capabilities, int $limit = 10): array {
-        if (!$this->useGNode) {
-            throw new StorageException(
-                'Template discovery requires gNode integration (useGNode=true)'
-            );
-        }
-
-        try {
-            $result = $this->gNodeClient->discoverTemplatesByCapability($capabilities, $limit);
-
-            SelfContainedErrorHandler::logInfo(
-                'ResourceManager',
-                'discoverTemplatesByCapability',
-                "Discovered templates by capability",
-                [
-                    'capabilities' => $capabilities,
-                    'limit' => $limit,
-                    'found' => count($result)
-                ]
-            );
-
-            return $result;
-
-        } catch (\Throwable $e) {
-            $this->logError('discover_templates', json_encode($capabilities), $e->getMessage());
-            throw new StorageException(
-                "Failed to discover templates by capability",
-                0,
-                $e
-            );
-        }
-    }
-
-    /**
      * Render template string with variables using gNode
      *
      * @param string $template Template string
@@ -719,33 +677,6 @@ class ResourceManager implements ModuleInterface {
             $this->logError('render_template_string', 'template', $e->getMessage());
             throw new StorageException(
                 "Failed to render template string",
-                0,
-                $e
-            );
-        }
-    }
-
-    /**
-     * Get all template metadata from gNode
-     *
-     * @param array $config Query configuration
-     * @return array Array of template metadata
-     * @throws StorageException If gNode not available
-     */
-    public function getAllTemplateMetadata(array $config = []): array {
-        if (!$this->useGNode) {
-            throw new StorageException(
-                'Template metadata requires gNode integration (useGNode=true)'
-            );
-        }
-
-        try {
-            return $this->gNodeClient->getAllTemplateMetadata($config);
-
-        } catch (\Throwable $e) {
-            $this->logError('get_all_template_metadata', 'all', $e->getMessage());
-            throw new StorageException(
-                "Failed to get template metadata",
                 0,
                 $e
             );
