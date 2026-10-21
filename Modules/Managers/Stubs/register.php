@@ -96,6 +96,7 @@ $stubOnlyManagers = [
     'MetricsManager'      => 'gCore\\Modules\\Managers\\Stubs\\MetricsManagerStub',
     'MollieManager'       => 'gCore\\Modules\\Managers\\Stubs\\MollieManagerStub',
     'OptimizationManager' => 'gCore\\Modules\\Managers\\Stubs\\OptimizationManagerStub',
+    'PlanningManager'     => 'gCore\\Modules\\Managers\\Stubs\\PlanningManagerStub',
     'SEOManager'          => 'gCore\\Modules\\Managers\\Stubs\\SEOManagerStub',
     'TemplateManager'     => 'gCore\\Modules\\Managers\\Stubs\\TemplateManagerStub',
     'TopologyManager'     => 'gCore\\Modules\\Managers\\Stubs\\TopologyManagerStub',

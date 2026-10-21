@@ -94,6 +94,20 @@ services:
       - hardwareSecurity
 
   # ---------------------------------------------------------------------------
+  # CapabilityManager - per-recipient capability links (derived tokens, hash-only storage)
+  # ---------------------------------------------------------------------------
+  CapabilityManager:
+    class: gCore\Modules\Managers\Base\CapabilityManager\CapabilityManager
+    category: core
+    priority: 2
+    required: false
+    dependencies: []
+    description: Capability links - scoped, expiring, revocable links; only sha256 of a token is stored
+    state_vector: [authorization]
+    capabilities:
+      capability_links: 1.0
+
+  # ---------------------------------------------------------------------------
   # ErrorManager - Centralized error tracking and logging
   # ---------------------------------------------------------------------------
   ErrorManager:
@@ -521,6 +535,27 @@ services:
       refunds: extension
       recurring_payments: extension
       dispute_evidence: extension
+
+  # ---------------------------------------------------------------------------
+  # PlanningManager - planning and booking (resolved via ExtensionResolver)
+  # ---------------------------------------------------------------------------
+  PlanningManager:
+    class: gCore\Modules\Managers\Stubs\PlanningManagerStub
+    category: extension
+    priority: 112
+    dependencies:
+      - CacheManager
+      - ErrorManager
+      - SecurityManager
+      - CapabilityManager
+    description: Planning and booking - stub by default (refuses every action); full implementation via geodineum/gcore-planning
+    state_vector: [planning, booking]
+    capabilities:
+      planning: 0.0                  # Requires: gcore-planning
+      booking: 0.0                   # Requires: gcore-planning
+    capability_requirements:
+      planning: extension
+      booking: extension
 
   # ---------------------------------------------------------------------------
   # EcommerceManager - Ecommerce integration (resolved via ExtensionResolver)
