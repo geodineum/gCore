@@ -770,6 +770,19 @@ function gcore_rest_planning(\WP_REST_Request $request): \WP_REST_Response {
     return $response;
 }
 
+/** The planner's screen in wp-admin, shown only when the extension is installed. */
+add_action('admin_menu', function () {
+    $manager = gcore_planning_manager();
+    if (!is_object($manager) || !method_exists($manager, 'renderAdmin')) {
+        return;
+    }
+    $cap = current_user_can('gcore_plan') ? 'gcore_plan' : 'manage_options';
+    add_menu_page('Planning', 'Planning', $cap, 'gcore-planning', function () use ($manager) {
+        echo $manager->renderAdmin((string)(gcore_admin_site_id() ?? 'default'),
+            ['rest' => esc_url_raw(rest_url('gcore/v1/planning/')), 'nonce' => wp_create_nonce('wp_rest')]);
+    }, 'dashicons-calendar-alt', 58);
+});
+
 /**
  * The agent's page at /plan. A token in the URL is exchanged for a session cookie and
  * the browser redirected to /plan without it, so the token leaves the address bar,
