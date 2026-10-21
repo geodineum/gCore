@@ -686,7 +686,126 @@ add_action('rest_api_init', function() {
         'callback' => 'gcore_rest_mollie_webhook',
         'permission_callback' => '__return_true'
     ]);
+
+    // Planning: one route for every action. Who is asking is decided here (a planner by
+    // WordPress capability, an agent by the capability session cookie, else public) and
+    // checked again by the manager, which refuses everything on a site without the extension.
+    register_rest_route('gcore/v1', '/planning/(?P<action>[a-z][a-z._]{1,48})', [
+        'methods' => 'POST',
+        'callback' => 'gcore_rest_planning',
+        'permission_callback' => '__return_true'
+    ]);
 });
+
+if (!defined('GCORE_PLAN_COOKIE')) {
+    define('GCORE_PLAN_COOKIE', '__Host-gcore_plan');
+}
+
+/** The site's PlanningManager (Pro or the refusing stub), initialized for this request. */
+function gcore_planning_manager() {
+    static $manager = false;
+    if ($manager !== false) {
+        return $manager;
+    }
+    $manager = null;
+    try {
+        $class = \gCore\Modules\Core\Utils\ExtensionResolver::resolve('PlanningManager');
+        if (is_string($class) && class_exists($class) && method_exists($class, 'getInstance')) {
+            $manager = $class::getInstance();
+            if (!$manager->isInitialized()) {
+                $manager->initialize(['site_id' => (string)(gcore_admin_site_id() ?? 'default'), 'gnode_client' => gcore_get_admin_gnode_client()]);
+            }
+        }
+    } catch (\Throwable $e) {
+        error_log('[gCore] planning: ' . $e->getMessage());
+        $manager = null;
+    }
+    return $manager;
+}
+
+/** Twenty public calls per address per five minutes (link exchange, "send my link again"). */
+function gcore_planning_rate_ok(string $action): bool {
+    $client = gcore_get_admin_gnode_client();
+    if (!is_object($client) || !method_exists($client, 'checkRateLimit')) {
+        return true;
+    }
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    $r = $client->checkRateLimit('planning:' . $action . ':' . substr(hash('sha256', $ip), 0, 16), 20, 300);
+    return !empty($r['allowed']);
+}
+
+function gcore_planning_actor(): array {
+    if (is_user_logged_in() && (current_user_can('gcore_plan') || current_user_can('manage_options'))) {
+        return ['kind' => 'planner', 'id' => 'wp:' . get_current_user_id()];
+    }
+    $sid = isset($_COOKIE[GCORE_PLAN_COOKIE]) ? (string)$_COOKIE[GCORE_PLAN_COOKIE] : '';
+    return $sid !== '' ? ['kind' => 'agent', 'session' => $sid] : ['kind' => 'public'];
+}
+
+function gcore_planning_session_cookie(string $sid, int $expiresMs): void {
+    setcookie(GCORE_PLAN_COOKIE, $sid, ['expires' => intdiv($expiresMs, 1000), 'path' => '/', 'secure' => true,
+                                        'httponly' => true, 'samesite' => 'Lax']);
+}
+
+function gcore_rest_planning(\WP_REST_Request $request): \WP_REST_Response {
+    $action = (string)$request->get_param('action');
+    $manager = gcore_planning_manager();
+    if (!is_object($manager) || !method_exists($manager, 'handle')) {
+        return new \WP_REST_Response(['ok' => false, 'code' => 'unavailable', 'error' => 'planning is not available'], 503);
+    }
+    $actor = gcore_planning_actor();
+    if ($actor['kind'] === 'public' && !gcore_planning_rate_ok($action)) {
+        return new \WP_REST_Response(['ok' => false, 'code' => 'rate_limited', 'error' => 'too many attempts; try again in a few minutes'], 429);
+    }
+    $input = $request->get_json_params();
+    $result = $manager->handle((string)(gcore_admin_site_id() ?? 'default'), $action, is_array($input) ? $input : [], $actor);
+    if ($action === 'link.exchange' && !empty($result['ok'])) {
+        gcore_planning_session_cookie((string)$result['result']['session'], (int)$result['result']['expires_ms']);
+        unset($result['result']['session']);
+    }
+    $codes = ['forbidden' => 403, 'not_found' => 404, 'invalid' => 400, 'conflict' => 409, 'unavailable' => 503, 'internal' => 500];
+    $response = new \WP_REST_Response($result, empty($result['ok']) ? ($codes[$result['code'] ?? 'internal'] ?? 400) : 200);
+    $response->header('Cache-Control', 'no-store');
+    $response->header('Referrer-Policy', 'no-referrer');
+    return $response;
+}
+
+/**
+ * The agent's page at /plan. A token in the URL is exchanged for a session cookie and
+ * the browser redirected to /plan without it, so the token leaves the address bar,
+ * history and any later referrer. A GET changes no planning data: a mail scanner that
+ * opens the link only creates a session that expires.
+ */
+add_action('template_redirect', function () {
+    $path = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    if (rtrim($path, '/') !== '/plan') {
+        return;
+    }
+    $manager = gcore_planning_manager();
+    if (!is_object($manager) || !method_exists($manager, 'renderPage')) {
+        return;
+    }
+    header('Referrer-Policy: no-referrer');
+    header('Cache-Control: no-store');
+    header('X-Robots-Tag: noindex, nofollow');
+    $site = (string)(gcore_admin_site_id() ?? 'default');
+    if (isset($_GET['t']) && is_string($_GET['t'])) {
+        $r = gcore_planning_rate_ok('landing')
+            ? $manager->handle($site, 'link.exchange', ['token' => (string)$_GET['t']], ['kind' => 'public'])
+            : ['ok' => false];
+        if (!empty($r['ok'])) {
+            gcore_planning_session_cookie((string)$r['result']['session'], (int)$r['result']['expires_ms']);
+        }
+        wp_safe_redirect(home_url('/plan' . (empty($r['ok']) ? '?link=invalid' : '')), 303);
+        exit;
+    }
+    status_header(200);
+    get_header();
+    echo $manager->renderPage($site, ['rest' => esc_url_raw(rest_url('gcore/v1/planning/')), 'link_invalid' => isset($_GET['link'])]);
+    get_footer();
+    exit;
+});
+
 
 function gcore_rest_mollie_webhook(\WP_REST_Request $request): \WP_REST_Response {
     $siteId = (string)(gcore_admin_site_id() ?? 'default');
