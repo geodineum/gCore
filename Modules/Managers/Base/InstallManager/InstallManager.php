@@ -1352,17 +1352,16 @@ class InstallManager implements ModuleInterface
         }
 
         try {
-            // Use GNODE_LOCK_ACQUIRE Lua function
-            // Parameters: key, timeout, owner_id
+            // GNODE_LOCK_ACQUIRE resource | site_id, token, ttl_s -> 1 or 0
             $ownerId = $this->nodeMetadata['node_id'] . ':' . getmypid();
 
             $result = $this->gNodeClient->fcall('GNODE_LOCK_ACQUIRE', [$lockKey], [
-                (string)$timeout,
+                $this->nodeMetadata['site_id'],
                 $ownerId,
-                $this->nodeMetadata['site_id']
+                (string)$timeout
             ]);
 
-            $acquired = ($result === 'OK' || $result === true || $result === 1);
+            $acquired = ((int)$result === 1);
 
             if ($acquired) {
                 $this->log('debug', "Lock acquired: {$lockKey}");
@@ -1393,12 +1392,13 @@ class InstallManager implements ModuleInterface
             $ownerId = $this->nodeMetadata['node_id'] . ':' . getmypid();
 
             $result = $this->gNodeClient->fcall('GNODE_LOCK_RELEASE', [$lockKey], [
-                $ownerId,
-                $this->nodeMetadata['site_id']
+                $this->nodeMetadata['site_id'],
+                $ownerId
             ]);
 
-            $this->log('debug', "Lock released: {$lockKey}");
-            return true;
+            $released = ((int)$result === 1);
+            $this->log('debug', $released ? "Lock released: {$lockKey}" : "Lock was not ours or already gone: {$lockKey}");
+            return $released;
 
         } catch (\Exception $e) {
             $this->log('warning', "Lock release failed: {$e->getMessage()}");

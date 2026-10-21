@@ -2073,13 +2073,12 @@ class CacheManager implements ModuleInterface {
         try {
             $storageKey = $this->getKey($key);
 
-            // Check if key exists first
-            if ($this->storage->exists($storageKey)) {
+            // Atomic or not at all: exists-then-set lets two callers both "win".
+            if (!method_exists($this->storage, 'setNx')) {
+                $this->logError('setNx', $key, 'this storage backend has no atomic set-if-absent');
                 return false;
             }
-
-            // Set the value
-            $result = $this->storage->set($storageKey, $value, $ttl);
+            $result = $this->storage->setNx($storageKey, $value, $ttl);
 
             if ($result) {
                 $this->metrics['sets']++;

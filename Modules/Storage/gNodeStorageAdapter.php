@@ -123,6 +123,21 @@ class gNodeStorageAdapter implements StorageInterface
     }
 
     /**
+     * Set only if absent, atomically (GNODE_CACHE_SET with NX: SET NX and its EXPIRE in one function)
+     *
+     * @return bool True if this call set it, false if the key already existed
+     */
+    public function setNx(string $key, $value, int $ttl = 0): bool
+    {
+        try {
+            return $this->gNodeClient->luaSet($key, $value, $ttl, 'NX');
+        } catch (\Exception $e) {
+            $this->logDebug("SETNX error for key '{$key}': " . $e->getMessage());
+            throw new StorageException("Failed to set key '{$key}': " . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
      * Get a value from storage using gNode-Client Lua function
      *
      * @param string $key Storage key

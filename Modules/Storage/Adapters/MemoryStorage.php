@@ -236,6 +236,17 @@ class MemoryStorage implements StorageInterface
     }
 
     /**
+     * Set only if absent. One PHP process owns this store, so check-then-set is atomic here.
+     */
+    public function setNx(string $key, $value, int $ttl = 0): bool
+    {
+        if ($this->exists($key)) {
+            return false;
+        }
+        return $this->set($key, $value, $ttl);
+    }
+
+    /**
      * Check if a key exists (and is not expired)
      *
      * @param string $key The key to check
