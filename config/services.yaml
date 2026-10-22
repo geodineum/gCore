@@ -492,13 +492,13 @@ services:
   # CommsManager - Notifications and messaging (resolved via ExtensionResolver)
   # ---------------------------------------------------------------------------
   CommsManager:
-    class: gCore\Modules\Managers\Stubs\CommsManagerStub
+    class: gCore\Modules\Comms\CommsManager
     category: extension
     priority: 104
     dependencies:
       - CacheManager
       - ErrorManager
-    description: Notification daemon integration - stub by default; full implementation via external extension package
+    description: Notification settings and the comms stream (the free in-tree manager is canonical; delivery is the Geodineum-COMMS daemon)
     state_vector: [notifications, messaging]
     capabilities:
       email: 0.0                     # Requires: SMTP config or postfix

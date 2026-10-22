@@ -60,6 +60,8 @@ $baseManagers = [
     'StateManager'        => 'gCore\\Modules\\Managers\\Base\\StateManager\\StateManager',
     'WordPressManager'    => 'gCore\\Modules\\Managers\\Base\\WordPressManager\\WordPressManager',
     'AssetManager'        => 'gCore\\Modules\\Managers\\Base\\AssetManager\\AssetManager',
+    // The free in-tree manager is the canonical one (gCore-Comms Pro was withdrawn 2026-10-05).
+    'CommsManager'        => 'gCore\\Modules\\Comms\\CommsManager',
 ];
 
 /**
@@ -89,7 +91,6 @@ $baseManagers = [
  */
 $stubOnlyManagers = [
     'AnalyticsManager'    => 'gCore\\Modules\\Managers\\Stubs\\AnalyticsManagerStub',
-    'CommsManager'        => 'gCore\\Modules\\Managers\\Stubs\\CommsManagerStub',
     'EcommerceManager'    => 'gCore\\Modules\\Managers\\Stubs\\EcommerceManagerStub',
     'InferenceManager'    => 'gCore\\Modules\\Managers\\Stubs\\InferenceManagerStub',
     'ManifestManager'     => 'gCore\\Modules\\Managers\\Stubs\\ManifestManagerStub',
