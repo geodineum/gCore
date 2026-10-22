@@ -792,7 +792,7 @@ add_action('admin_menu', function () {
  */
 add_action('template_redirect', function () {
     $path = rtrim((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
-    if (!in_array($path, ['/plan', '/plan/offer', '/plan/seat', '/plan/booked', '/plan/feed.ics'], true)) {
+    if ($path !== '/plan' && $path !== '/plan/feed.ics' && !preg_match('#\A/plan/[a-z]{1,20}\z#', $path)) {
         return;
     }
     $manager = gcore_planning_manager();
@@ -803,18 +803,6 @@ add_action('template_redirect', function () {
     header('Cache-Control: no-store');
     header('X-Robots-Tag: noindex, nofollow');
     $site = (string)(gcore_admin_site_id() ?? 'default');
-    if ($path === '/plan/offer') {
-        // A fill-in offer: shown, never used up by opening it (the buttons answer).
-        if (!method_exists($manager, 'renderOffer')) {
-            return;
-        }
-        status_header(200);
-        get_header();
-        echo $manager->renderOffer($site, isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '',
-            ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))]);
-        get_footer();
-        exit;
-    }
     if ($path === '/plan/feed.ics') {
         // A calendar app fetches this for months: read-only, the link is the authority.
         $r = gcore_planning_rate_ok('feed', 600)
@@ -828,16 +816,19 @@ add_action('template_redirect', function () {
         echo $r['result']['ics'];
         exit;
     }
-    if ($path === '/plan/seat' || $path === '/plan/booked') {
-        $render = $path === '/plan/seat' ? 'renderSeat' : 'renderBooked';
-        if (!method_exists($manager, $render)) {
+    if ($path !== '/plan') {
+        // A page behind one link (an offer, a freed place, a review): shown, never used up
+        // by opening it; its buttons act.
+        $html = method_exists($manager, 'renderLink')
+            ? $manager->renderLink($site, substr($path, 6), isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '',
+                ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))])
+            : null;
+        if (!is_string($html)) {
             return;
         }
         status_header(200);
         get_header();
-        echo $path === '/plan/seat'
-            ? $manager->renderSeat($site, isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '', ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))])
-            : $manager->renderBooked($site);
+        echo $html;
         get_footer();
         exit;
     }
