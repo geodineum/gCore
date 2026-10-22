@@ -723,14 +723,15 @@ function gcore_planning_manager() {
     return $manager;
 }
 
-/** Twenty public calls per address per five minutes (link exchange, "send my link again"). */
-function gcore_planning_rate_ok(string $action): bool {
+/** Public calls per address per five minutes: twenty for links and resends; more for calendar feeds,
+ *  which many teachers behind one office address poll on their own schedule. */
+function gcore_planning_rate_ok(string $action, int $limit = 20): bool {
     $client = gcore_get_admin_gnode_client();
     if (!is_object($client) || !method_exists($client, 'checkRateLimit')) {
         return true;
     }
     $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-    $r = $client->checkRateLimit('planning:' . $action . ':' . substr(hash('sha256', $ip), 0, 16), 20, 300);
+    $r = $client->checkRateLimit('planning:' . $action . ':' . substr(hash('sha256', $ip), 0, 16), $limit, 300);
     return !empty($r['allowed']);
 }
 
@@ -791,7 +792,7 @@ add_action('admin_menu', function () {
  */
 add_action('template_redirect', function () {
     $path = rtrim((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
-    if (!in_array($path, ['/plan', '/plan/offer', '/plan/seat', '/plan/booked'], true)) {
+    if (!in_array($path, ['/plan', '/plan/offer', '/plan/seat', '/plan/booked', '/plan/feed.ics'], true)) {
         return;
     }
     $manager = gcore_planning_manager();
@@ -812,6 +813,19 @@ add_action('template_redirect', function () {
         echo $manager->renderOffer($site, isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '',
             ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))]);
         get_footer();
+        exit;
+    }
+    if ($path === '/plan/feed.ics') {
+        // A calendar app fetches this for months: read-only, the link is the authority.
+        $r = gcore_planning_rate_ok('feed', 600)
+            ? $manager->handle($site, 'feed.ics', ['token' => isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : ''], ['kind' => 'public'])
+            : ['ok' => false];
+        if (empty($r['ok'])) {
+            status_header(404);
+            exit;
+        }
+        header('Content-Type: text/calendar; charset=utf-8');
+        echo $r['result']['ics'];
         exit;
     }
     if ($path === '/plan/seat' || $path === '/plan/booked') {
