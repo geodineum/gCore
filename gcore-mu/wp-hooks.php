@@ -791,7 +791,7 @@ add_action('admin_menu', function () {
  */
 add_action('template_redirect', function () {
     $path = rtrim((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
-    if ($path !== '/plan' && $path !== '/plan/offer') {
+    if (!in_array($path, ['/plan', '/plan/offer', '/plan/seat', '/plan/booked'], true)) {
         return;
     }
     $manager = gcore_planning_manager();
@@ -811,6 +811,19 @@ add_action('template_redirect', function () {
         get_header();
         echo $manager->renderOffer($site, isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '',
             ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))]);
+        get_footer();
+        exit;
+    }
+    if ($path === '/plan/seat' || $path === '/plan/booked') {
+        $render = $path === '/plan/seat' ? 'renderSeat' : 'renderBooked';
+        if (!method_exists($manager, $render)) {
+            return;
+        }
+        status_header(200);
+        get_header();
+        echo $path === '/plan/seat'
+            ? $manager->renderSeat($site, isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '', ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))])
+            : $manager->renderBooked($site);
         get_footer();
         exit;
     }
