@@ -790,8 +790,8 @@ add_action('admin_menu', function () {
  * opens the link only creates a session that expires.
  */
 add_action('template_redirect', function () {
-    $path = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-    if (rtrim($path, '/') !== '/plan') {
+    $path = rtrim((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
+    if ($path !== '/plan' && $path !== '/plan/offer') {
         return;
     }
     $manager = gcore_planning_manager();
@@ -802,6 +802,18 @@ add_action('template_redirect', function () {
     header('Cache-Control: no-store');
     header('X-Robots-Tag: noindex, nofollow');
     $site = (string)(gcore_admin_site_id() ?? 'default');
+    if ($path === '/plan/offer') {
+        // A fill-in offer: shown, never used up by opening it (the buttons answer).
+        if (!method_exists($manager, 'renderOffer')) {
+            return;
+        }
+        status_header(200);
+        get_header();
+        echo $manager->renderOffer($site, isset($_GET['t']) && is_string($_GET['t']) ? (string)$_GET['t'] : '',
+            ['rest' => esc_url_raw(rest_url('gcore/v1/planning/'))]);
+        get_footer();
+        exit;
+    }
     if (isset($_GET['t']) && is_string($_GET['t'])) {
         $r = gcore_planning_rate_ok('landing')
             ? $manager->handle($site, 'link.exchange', ['token' => (string)$_GET['t']], ['kind' => 'public'])
