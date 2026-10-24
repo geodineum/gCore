@@ -35,6 +35,8 @@ foreach ($_COOKIE as $key => $value) {
     // list in gTemplate full-page-cache.php; keep the two in sync.
     if ($key === 'gcore_viewkey') return;
     if ($key === 'gan_access') return;
+    // Geodine-FrontEnd: the alpha door changes the menu, and a session holder sees the window.
+    if ($key === 'geodine_alpha_door' || $key === '__Host-geodine_alpha') return;
 }
 
 // Skip for nocache query params

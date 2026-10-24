@@ -311,15 +311,23 @@ class CapabilityManager implements ModuleInterface
         return $this->secrets[$siteId] = $s;
     }
 
+    /**
+     * The lock's declared key carries the site's hash tag: ValKey checks a function's declared
+     * keys against the caller's ACL before the function runs, and a site's identity may touch
+     * only its own namespace. A bare resource name was refused with NOPERM on every site but the
+     * daemon's own, which made the first link a site ever issued a fatal.
+     */
+    private function lockKey(string $siteId): string { return '{' . $siteId . '}:cap:secret'; }
+
     private function lock(string $siteId, string $token): bool
     {
-        return (int)$this->storage->fcall('GNODE_LOCK_ACQUIRE', ['capability-secret'], [$siteId, $token, 10]) === 1;
+        return (int)$this->storage->fcall('GNODE_LOCK_ACQUIRE', [$this->lockKey($siteId)], [$siteId, $token, 10]) === 1;
     }
 
     private function unlock(string $siteId, string $token): void
     {
         try {
-            $this->storage->fcall('GNODE_LOCK_RELEASE', ['capability-secret'], [$siteId, $token]);
+            $this->storage->fcall('GNODE_LOCK_RELEASE', [$this->lockKey($siteId)], [$siteId, $token]);
         } catch (\Throwable $e) {
             // the lock expires on its own after 10 s
         }
