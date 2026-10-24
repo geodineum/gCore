@@ -4,6 +4,8 @@ declare(strict_types=1);
  * Verify capability links without a framework boot:  php tests/capability-check.php
  * Against a real ValKey with gNode's secrets and lock functions loaded (the Lua contract too):
  *   CAPABILITY_VALKEY_PORT=47998 php tests/capability-check.php
+ * As a site-scoped identity (the ACL a site really holds, ~{demo_site}:* and nothing else):
+ *   CAPABILITY_VALKEY_PORT=47998 CAPABILITY_VALKEY_AUTH=user:password php tests/capability-check.php
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -42,7 +44,10 @@ final class FakeStore {
 /** The same five calls against a real ValKey (phpredis). */
 final class RealStore {
     public \Redis $r;
-    public function __construct(int $port) { $this->r = new \Redis(); $this->r->connect('127.0.0.1', $port); }
+    public function __construct(int $port, string $auth = '') {
+        $this->r = new \Redis(); $this->r->connect('127.0.0.1', $port);
+        if ($auth !== '') { [$u, $p] = array_pad(explode(':', $auth, 2), 2, ''); $this->r->auth($p === '' ? $u : [$u, $p]); }
+    }
     public function get(string $k) { return $this->r->get($k); }
     public function set(string $k, $v, ?int $ttl = null): bool { return $ttl ? $this->r->setex($k, $ttl, $v) : $this->r->set($k, $v); }
     public function exists(string $k): bool { return $this->r->exists($k) > 0; }
@@ -126,13 +131,16 @@ suite('capability (memory)', $fake, function (int &$now, int $ms) use ($fake) { 
 
 $port = (int)(getenv('CAPABILITY_VALKEY_PORT') ?: 0);
 if ($port > 0) {
-    $real = new RealStore($port);
-    $real->r->flushAll();
-    foreach (['gnode_gcore_config.lua', 'gnode_lock.lua'] as $lib) {
-        $src = file_get_contents((getenv('GNODE_FUNCTIONS_DIR') ?: __DIR__ . '/../../gNode/daemon/functions') . '/' . $lib);
-        $real->r->rawCommand('FUNCTION', 'LOAD', 'REPLACE', $src);
+    $auth = (string)(getenv('CAPABILITY_VALKEY_AUTH') ?: '');
+    $real = new RealStore($port, $auth);
+    if ($auth === '') {
+        $real->r->flushAll();
+        foreach (['gnode_gcore_config.lua', 'gnode_lock.lua'] as $lib) {
+            $src = file_get_contents((getenv('GNODE_FUNCTIONS_DIR') ?: __DIR__ . '/../../gNode/daemon/functions') . '/' . $lib);
+            $real->r->rawCommand('FUNCTION', 'LOAD', 'REPLACE', $src);
+        }
     }
-    suite("capability (ValKey :$port)", $real, function (int &$now, int $ms) { $now += $ms; });
+    suite("capability (ValKey :$port" . ($auth !== '' ? ', as ' . explode(':', $auth)[0] : '') . ")", $real, function (int &$now, int $ms) { $now += $ms; });
 }
 
 printf("%d passed, %d failed\n", $pass, $fail);
