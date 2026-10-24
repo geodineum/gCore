@@ -175,9 +175,14 @@ class CapabilityManager implements ModuleInterface
      * Trade a token for a server-side session. A single-use link is consumed here:
      * the first exchange deletes it, a second gets null.
      *
+     * The session ends when the link would have (a link that lasts a week opens a
+     * week of sessions), unless $sessionExpiresMs says otherwise: a sign-in link
+     * that must die in fifteen minutes can still open a session that lives for
+     * thirty days of use.
+     *
      * @return array|null {session_id, scope, subject, csrf, expires_ms}
      */
-    public function exchange(string $siteId, string $token, ?string $expectScope = null): ?array
+    public function exchange(string $siteId, string $token, ?string $expectScope = null, ?int $sessionExpiresMs = null): ?array
     {
         $grant = $this->verify($siteId, $token);
         if ($grant === null || ($expectScope !== null && $grant['scope'] !== $expectScope)) {
@@ -188,9 +193,10 @@ class CapabilityManager implements ModuleInterface
         }
         $sessionId = $this->random();
         $idle = (int)$this->config['session_idle_seconds'];
-        $expires = min($grant['expires_ms'], $this->now() + $idle * 1000);
+        $sessionEnd = $sessionExpiresMs !== null && $sessionExpiresMs > $this->now() ? $sessionExpiresMs : (int)$grant['expires_ms'];
+        $expires = min($sessionEnd, $this->now() + $idle * 1000);
         $session = ['scope' => $grant['scope'], 'subject' => $grant['subject'],
-                    'csrf' => $this->random(), 'expires_ms' => $grant['expires_ms']];
+                    'csrf' => $this->random(), 'expires_ms' => $sessionEnd];
         $ttl = max(1, intdiv($expires - $this->now() + 999, 1000));
         $this->storage->set($this->sessionKey($siteId, $sessionId), json_encode($session), $ttl);
         return ['session_id' => $sessionId] + $session;
