@@ -40,7 +40,7 @@ foreach ($_COOKIE as $key => $value) {
 }
 
 // Skip for nocache query params
-$nocache_params = ['preview', 'customize_changeset_uuid', 'wp-preview', 'nocache'];
+$nocache_params = ['preview', 'customize_changeset_uuid', 'wp-preview', 'nocache', 'alpha'];  // alpha: the Geodine door opens on this request
 foreach ($nocache_params as $param) {
     if (isset($_GET[$param])) return;
 }
