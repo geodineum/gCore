@@ -12,7 +12,7 @@
  */
 
 // Skip non-cacheable requests early (before any initialization)
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') return;
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
 if (defined('WP_CLI') && WP_CLI) return;
 if (defined('DOING_CRON') && DOING_CRON) return;
 if (defined('DOING_AJAX') && DOING_AJAX) return;
