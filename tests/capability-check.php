@@ -93,6 +93,14 @@ function suite(string $name, object $store, callable $advance): void {
     $re = $cap->issue('demo_site', 'round', 'inv-1', $deadline);
     check('issuing after a revoke yields a fresh token, not the revoked one', $re !== $r && $re !== $t && $cap->verify('demo_site', $re) !== null);
 
+    $login = $cap->issue('demo_site', 'alpha', 'web-1', $now + 15 * 60 * 1000, true);
+    $long = $cap->exchange('demo_site', $login, 'alpha', $now + 30 * 86400 * 1000);
+    check('a session may outlive its link when the exchange says so', $long !== null && $long['expires_ms'] === $now + 30 * 86400 * 1000);
+    $advance($now, 20 * 60 * 1000);
+    check('twenty minutes on, the fifteen-minute link is dead and the session is not', $cap->verify('demo_site', $login) === null && $cap->session('demo_site', $long['session_id']) !== null);
+    $capped = $cap->exchange('demo_site', $cap->issue('demo_site', 'alpha', 'web-2', $now + 60_000, true), 'alpha', $now - 1);
+    check('a session end in the past falls back to the link expiry', $capped !== null && $capped['expires_ms'] === $now + 60_000);
+
     $short = $cap->issue('demo_site', 'feed', 'agent-3', $now + 2000);
     $advance($now, 3000);
     check('an expired link grants nothing', $cap->verify('demo_site', $short) === null);
