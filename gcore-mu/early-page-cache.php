@@ -12,6 +12,7 @@
  */
 
 // Skip non-cacheable requests early (before any initialization)
+if (PHP_SAPI === 'cli') return; // a script that loads WordPress is never a page visit
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
 if (defined('WP_CLI') && WP_CLI) return;
 if (defined('DOING_CRON') && DOING_CRON) return;
