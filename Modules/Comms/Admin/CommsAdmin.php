@@ -301,11 +301,35 @@ class CommsAdmin
             wp_send_json_error(['message' => 'Access denied to this site']);
         }
 
+        // The form sends the sections it shows; any other stored section (one a script or a newer
+        // COMMS added) is kept, not erased by an autosave.
+        $stored = $this->comms->getSiteSettings($siteId);
+        if (is_array($stored)) {
+            $settings += $stored;
+        }
+        if (isset($settings['addressed'])) {
+            $settings['addressed'] = self::addressed($settings['addressed']);
+        }
+
         if ($this->comms->saveSiteSettings($siteId, $settings)) {
             wp_send_json_success(['message' => 'Settings saved']);
         } else {
             wp_send_json_error(['message' => 'Failed to save settings']);
         }
+    }
+
+    /** Addressed types as COMMS reads them: lowercase names, a daily cap of 1 to 10000. */
+    private static function addressed($raw): array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $types = [];
+        foreach ((array) ($raw['types'] ?? []) as $t) {
+            $t = strtolower(trim((string) $t));
+            if (preg_match('/^[a-z][a-z0-9_.-]{0,31}$/', $t) && !in_array($t, $types, true)) {
+                $types[] = $t;
+            }
+        }
+        return ['types' => $types, 'daily_cap' => max(1, min(10000, (int) ($raw['daily_cap'] ?? 200)))];
     }
 
     /**
