@@ -17,6 +17,7 @@ $routingRules = $settings['routing_rules'] ?? [];
 $rateLimits = $settings['rate_limits'] ?? [];
 $filters = $settings['filters'] ?? [];
 $retry = $settings['retry'] ?? [];
+$addressed = $settings['addressed'] ?? [];
 
 // Channel configs
 $emailConfig = $channels['email'] ?? [];
@@ -483,6 +484,39 @@ $smsConfig = $channels['sms'] ?? [];
             </table>
         </div>
 
+        <!-- Addressed messages -->
+        <div class="gcore-comms-card">
+            <h2><?php _e('Messages to One Person', 'gcore'); ?></h2>
+            <p class="description">
+                <?php _e('A message may name the one person it goes to (a sign-in link, an invitation) only for these types.', 'gcore'); ?>
+            </p>
+
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><?php _e('Types', 'gcore'); ?></th>
+                    <td>
+                        <input type="text" name="addressed[types]"
+                               value="<?php echo esc_attr(implode(', ', (array) ($addressed['types'] ?? ['planning']))); ?>"
+                               class="regular-text">
+                        <p class="description">
+                            <?php _e('Comma-separated, for example: planning, login, alpha. A type not listed is refused.', 'gcore'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php _e('Daily Cap', 'gcore'); ?></th>
+                    <td>
+                        <input type="number" name="addressed[daily_cap]"
+                               value="<?php echo esc_attr($addressed['daily_cap'] ?? 200); ?>"
+                               class="small-text" min="1" max="10000">
+                        <p class="description">
+                            <?php _e('At most this many addressed messages a day (UTC) for this site.', 'gcore'); ?>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <p class="submit gcore-comms-autosave-bar">
             <span class="gcore-comms-save-status" data-state="idle">
                 <span class="dashicons dashicons-yes-alt"></span>
@@ -899,6 +933,12 @@ jQuery(document).ready(function($) {
                 settings.filters.keywords_blocklist = value.split('\n').map(s => s.trim()).filter(s => s);
             } else if (name === 'filters[ip_blocklist]') {
                 settings.filters.ip_blocklist = value.split('\n').map(s => s.trim()).filter(s => s);
+            } else if (name === 'addressed[types]') {
+                settings.addressed = settings.addressed || {};
+                settings.addressed.types = value.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+            } else if (name === 'addressed[daily_cap]') {
+                settings.addressed = settings.addressed || {};
+                settings.addressed.daily_cap = parseInt(value, 10);
             } else if (name.match(/^retry\[(\w+)\]$/)) {
                 var key = name.match(/^retry\[(\w+)\]$/)[1];
                 settings.retry[key] = parseInt(value, 10);
