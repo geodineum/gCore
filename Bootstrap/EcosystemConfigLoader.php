@@ -340,8 +340,11 @@ function __resolve_password_file(string $credsDir): ?string
     // underscores. Sites whose site_id doesn't match their domain (e.g. the
     // wp-config domain normalises to one id but the cred uses another) won't
     // be helped here — they need an explicit VALKEY_USER SetEnv.
+    // SERVER_NAME is the Host header (UseCanonicalName Off), so the www alias
+    // maps to the apex site.
     $serverName = $_SERVER['SERVER_NAME'] ?? '';
     if (is_string($serverName) && $serverName !== '') {
+        $serverName = (string) preg_replace('/^www\./i', '', $serverName);
         $siteId = preg_replace('/[^a-z0-9_]/i', '_', strtolower($serverName));
         $siteId = preg_replace('/_+/', '_', $siteId);
         $siteId = trim($siteId, '_');

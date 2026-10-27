@@ -628,15 +628,6 @@ class WordPressManager implements WordPressManagerInterface
      */
     private function getDetectedEnvironment(): string
     {
-        // Check gCube config first
-        if (class_exists('\\gCube\\gNodeConfigLoader')) {
-            $env = \gCube\gNodeConfigLoader::getEnvironment();
-            if ($env) {
-                return $env;
-            }
-        }
-
-        // Fall back to WP_ENVIRONMENT_TYPE
         if (defined('WP_ENVIRONMENT_TYPE')) {
             return WP_ENVIRONMENT_TYPE;
         }
