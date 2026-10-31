@@ -102,6 +102,25 @@ if (!defined('GCORE_LIB_PATH')) {
     define('GCORE_LIB_PATH', GCORE_BASE_PATH . '/lib');
 }
 
+// A per-site pool confines PHP with open_basedir; probing a path outside it warns on every request.
+if (!function_exists('gcore_path_allowed')) {
+    function gcore_path_allowed(string $path): bool
+    {
+        $basedir = (string) ini_get('open_basedir');
+        if ($basedir === '') {
+            return true;
+        }
+        $path = rtrim($path, '/');
+        foreach (explode(PATH_SEPARATOR, $basedir) as $base) {
+            $base = rtrim($base, '/');
+            if ($base !== '' && ($path === $base || strpos($path, $base . '/') === 0)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 // GEODINEUM_LOG_DIR: Centralized geodineum logging directory
 // Priority: env var > /var/log/geodineum (if exists + writable) > not defined
 // When defined, SelfContainedErrorHandler uses /var/log/geodineum/gcore/sites/{site_id}/
@@ -109,9 +128,9 @@ if (!defined('GEODINEUM_LOG_DIR')) {
     $envGeodineumLogDir = getenv('GEODINEUM_LOG_DIR');
     $defaultGeodineumLogDir = '/var/log/geodineum';
 
-    if ($envGeodineumLogDir && is_dir($envGeodineumLogDir) && is_writable($envGeodineumLogDir . '/gcore')) {
+    if ($envGeodineumLogDir && gcore_path_allowed($envGeodineumLogDir) && is_dir($envGeodineumLogDir) && is_writable($envGeodineumLogDir . '/gcore')) {
         define('GEODINEUM_LOG_DIR', $envGeodineumLogDir);
-    } elseif (is_dir($defaultGeodineumLogDir) && is_writable($defaultGeodineumLogDir . '/gcore')) {
+    } elseif (gcore_path_allowed($defaultGeodineumLogDir) && is_dir($defaultGeodineumLogDir) && is_writable($defaultGeodineumLogDir . '/gcore')) {
         define('GEODINEUM_LOG_DIR', $defaultGeodineumLogDir);
     }
     // If neither condition met, GEODINEUM_LOG_DIR remains undefined
@@ -124,9 +143,9 @@ if (!defined('GCORE_LOG_PATH')) {
     $envLogPath = getenv('GCORE_LOG_PATH');
     $varLogPath = '/var/log/gcore';
 
-    if ($envLogPath && (is_dir($envLogPath) || is_writable(dirname($envLogPath)))) {
+    if ($envLogPath && gcore_path_allowed($envLogPath) && (is_dir($envLogPath) || is_writable(dirname($envLogPath)))) {
         define('GCORE_LOG_PATH', $envLogPath);
-    } elseif (is_dir($varLogPath) && is_writable($varLogPath)) {
+    } elseif (gcore_path_allowed($varLogPath) && is_dir($varLogPath) && is_writable($varLogPath)) {
         define('GCORE_LOG_PATH', $varLogPath);
     } elseif (defined('WP_CONTENT_DIR') && is_writable(WP_CONTENT_DIR)) {
         define('GCORE_LOG_PATH', WP_CONTENT_DIR . '/gcore-logs');
@@ -141,9 +160,9 @@ if (!defined('GCORE_CACHE_PATH')) {
     $envCachePath = getenv('GCORE_CACHE_PATH');
     $varCachePath = '/var/cache/gcore';
 
-    if ($envCachePath && (is_dir($envCachePath) || is_writable(dirname($envCachePath)))) {
+    if ($envCachePath && gcore_path_allowed($envCachePath) && (is_dir($envCachePath) || is_writable(dirname($envCachePath)))) {
         define('GCORE_CACHE_PATH', $envCachePath);
-    } elseif (is_dir($varCachePath) && is_writable($varCachePath)) {
+    } elseif (gcore_path_allowed($varCachePath) && is_dir($varCachePath) && is_writable($varCachePath)) {
         define('GCORE_CACHE_PATH', $varCachePath);
     } elseif (defined('WP_CONTENT_DIR') && is_writable(WP_CONTENT_DIR)) {
         define('GCORE_CACHE_PATH', WP_CONTENT_DIR . '/gcore-cache');
@@ -334,7 +353,7 @@ $gcoreProDirs = array_filter([
 $gcoreProPrefixes = [];
 $gcoreProBootstraps = [];
 foreach ($gcoreProDirs as $proDir) {
-    if (!is_dir($proDir)) {
+    if (!gcore_path_allowed($proDir) || !is_dir($proDir)) {
         continue;
     }
     foreach (glob($proDir . '/gCore-*/composer.json') ?: [] as $manifest) {

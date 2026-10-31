@@ -318,6 +318,10 @@ function __resolve_password_file(string $credsDir): ?string
     if (is_string($override) && $override !== '' && is_readable($override)) {
         return $override;
     }
+    // A site on its own pool reads only the credential its pool names: no host guess, no fallback.
+    if ((string) ini_get('open_basedir') !== '') {
+        return null;
+    }
     // Derive from VALKEY_USER (set by vhost SetEnv) before glob.
     // `gnode_client_example_com` ⇒ `valkey_client_example_com.password`.
     // Bypasses glob() entirely so per-site Apache contexts work even when
