@@ -107,7 +107,7 @@ if (!defined('GCORE_LIB_PATH')) {
 if (!function_exists('gcore_path_allowed')) {
     function gcore_path_allowed(string $path): bool
     {
-        $basedir = gcore_pool_basedir();
+        $basedir = \gCore\Bootstrap\gcore_pool_basedir();
         if ($basedir === '') {
             return true;
         }
