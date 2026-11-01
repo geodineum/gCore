@@ -370,7 +370,6 @@ class ErrorManager implements ModuleInterface {
             case E_USER_NOTICE:
                 return 'notice';
                 
-            case E_STRICT:
             case E_DEPRECATED:
             case E_USER_DEPRECATED:
                 return 'info';

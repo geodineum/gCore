@@ -784,7 +784,6 @@ class InstallManager implements ModuleInterface
             $body = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error = curl_error($ch);
-            curl_close($ch);
 
             if ($error) {
                 throw new \Exception('API request failed: ' . $error);
@@ -1086,7 +1085,6 @@ class InstallManager implements ModuleInterface
             curl_setopt($ch, CURLOPT_TIMEOUT, 300);
             curl_exec($ch);
             $error = curl_error($ch);
-            curl_close($ch);
             fclose($fp);
 
             if ($error) {
