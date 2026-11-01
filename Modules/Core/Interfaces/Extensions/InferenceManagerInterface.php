@@ -102,7 +102,7 @@ interface InferenceManagerInterface extends ModuleInterface
      * @param callable|null $progressCallback Progress callback
      * @return bool Success status
      */
-    public function pullModel(string $model, callable $progressCallback = null): bool;
+    public function pullModel(string $model, ?callable $progressCallback = null): bool;
 
     /**
      * Warm up (preload) models into memory

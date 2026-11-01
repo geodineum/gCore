@@ -1508,7 +1508,7 @@ class gCore implements ModuleInterface {
      * @throws \RuntimeException If service is not found or not active
      * @api
      */
-    public function getService(string $service = null, array $capabilities = []): object {
+    public function getService(?string $service = null, array $capabilities = []): object {
         $this->validateServiceState();
 
         // If capabilities are provided but no specific service, use capability-based discovery

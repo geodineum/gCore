@@ -93,7 +93,7 @@ class DependencyBundle
      * 
      * @throws CircularDependencyException When circular dependencies are detected
      */
-    public function calculateGraph(array $resolvedDeps = null): void
+    public function calculateGraph(?array $resolvedDeps = null): void
     {
         // Use the internal dependency fibers if no resolved dependencies are provided
         if ($resolvedDeps === null) {

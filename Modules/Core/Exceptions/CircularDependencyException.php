@@ -20,7 +20,7 @@ class CircularDependencyException extends \Exception
     /**
      * Constructor
      */
-    public function __construct(string $message, array $path = [], int $code = 0, \Throwable $previous = null)
+    public function __construct(string $message, array $path = [], int $code = 0, ?\Throwable $previous = null)
     {
         if (!empty($path)) {
             $message .= ': ' . implode(' -> ', $path) . ' -> ' . $path[0];

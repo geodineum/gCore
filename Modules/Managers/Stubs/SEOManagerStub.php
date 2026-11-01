@@ -470,7 +470,7 @@ class SEOManagerStub implements SEOManagerInterface
     /**
      * Generate AI description (stub: returns empty)
      */
-    public function generateAIDescription(string $content, string $model = null): string
+    public function generateAIDescription(string $content, ?string $model = null): string
     {
         return '';
     }
