@@ -103,10 +103,11 @@ if (!defined('GCORE_LIB_PATH')) {
 }
 
 // A per-site pool confines PHP with open_basedir; probing a path outside it warns on every request.
+// The pool passes its list in env[GCORE_OPEN_BASEDIR] (see gcore_pool_basedir).
 if (!function_exists('gcore_path_allowed')) {
     function gcore_path_allowed(string $path): bool
     {
-        $basedir = (string) ini_get('open_basedir');
+        $basedir = gcore_pool_basedir();
         if ($basedir === '') {
             return true;
         }

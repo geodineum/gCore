@@ -312,6 +312,17 @@ function load_bootstrap_valkey_tier(): void
  *      Falls through only when steps 1–4 yield nothing AND the PHP
  *      process can actually list `$credsDir`.
  */
+/**
+ * The open_basedir of this site's own pool, from the pool's environment (env[GCORE_OPEN_BASEDIR]), or ''.
+ * Never ini_get(): opcache shares one compiled copy of these files across pools, and on aesir an
+ * ini_get('open_basedir') inside it returned the value of whichever pool compiled the file first.
+ */
+function gcore_pool_basedir(): string
+{
+    $v = $_SERVER['GCORE_OPEN_BASEDIR'] ?? getenv('GCORE_OPEN_BASEDIR');
+    return is_string($v) ? $v : '';
+}
+
 function __resolve_password_file(string $credsDir): ?string
 {
     $override = getenv('VALKEY_PASSWORD_FILE');
@@ -319,7 +330,7 @@ function __resolve_password_file(string $credsDir): ?string
         return $override;
     }
     // A site on its own pool reads only the credential its pool names: no host guess, no fallback.
-    if ((string) ini_get('open_basedir') !== '') {
+    if (gcore_pool_basedir() !== '') {
         return null;
     }
     // Derive from VALKEY_USER (set by vhost SetEnv) before glob.
