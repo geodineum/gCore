@@ -50,6 +50,11 @@ foreach ($nocache_params as $param) {
  * Detect site_id from HTTP_HOST (must match the theme-side page cache)
  */
 function gcore_early_cache_get_site_id(): string {
+    // A site on its own PHP pool is told its id; the Host header is the visitor's to choose.
+    $pool = $_SERVER['GCORE_SITE_ID'] ?? getenv('GCORE_SITE_ID');
+    if (is_string($pool) && preg_match('/^[a-z0-9_]+$/', $pool)) {
+        return $pool;
+    }
     $host = $_SERVER['HTTP_HOST'] ?? '';
     // Clean domain
     $host = preg_replace('/^www\./', '', $host);

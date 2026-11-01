@@ -93,6 +93,12 @@ function gcore_admin_site_id(): ?string {
     }
     $sid = null;
 
+    $pool = $_SERVER['GCORE_SITE_ID'] ?? getenv('GCORE_SITE_ID');
+    if (is_string($pool) && preg_match('/^[a-z0-9_]+$/', $pool)) {
+        $sid = $pool;
+        return $sid;
+    }
+
     foreach ([
         ABSPATH . '/wp-config-geodineum.yaml',
         get_template_directory() . '/registration.yaml',
