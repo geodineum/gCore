@@ -262,7 +262,7 @@ interface SEOManagerInterface extends ModuleInterface
      * @param string|null $model Model to use
      * @return string AI-optimized description
      */
-    public function generateAIDescription(string $content, string $model = null): string;
+    public function generateAIDescription(string $content, ?string $model = null): string;
 
     /**
      * Generate Sparse Priming Representation (SPR)

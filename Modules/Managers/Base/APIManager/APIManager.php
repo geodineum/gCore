@@ -438,7 +438,7 @@ class APIManager implements ModuleInterface {
      * @return bool Success status
      * @api
      */
-    public function start(int $port = null, string $host = null): bool {
+    public function start(?int $port = null, ?string $host = null): bool {
         try {
             // Use provided values or fall back to configuration
             $port = $port ?? $this->config['server']['port'] ?? 8000;

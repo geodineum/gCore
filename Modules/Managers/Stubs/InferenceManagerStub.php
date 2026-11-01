@@ -179,7 +179,7 @@ class InferenceManagerStub implements InferenceManagerInterface
     /**
      * Pull model (stub: returns false)
      */
-    public function pullModel(string $model, callable $progressCallback = null): bool
+    public function pullModel(string $model, ?callable $progressCallback = null): bool
     {
         return false;
     }
