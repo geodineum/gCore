@@ -1022,6 +1022,12 @@ class gCore implements ModuleInterface {
                 'service' => $service,
                 'error' => $e->getMessage()
             ]);
+
+            // Optional services degrade to unavailable; only required ones abort core init
+            if (!($this->serviceTopology['services'][$service]['required'] ?? false)) {
+                unset($this->instances[$service]);
+                return;
+            }
             throw $e;
         }
     }
