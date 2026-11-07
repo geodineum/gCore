@@ -41,12 +41,6 @@ $config = [
     'default_role' => 'guest',
     'require_2fa' => false,
     'csrf_salt' => 'your-secret-salt',
-    'cors' => [
-        'enabled' => true,
-        'allowed_origins' => ['*'],
-        'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        'allowed_headers' => ['Content-Type', 'Authorization', 'X-API-Key']
-    ],
     'gnode_client' => $gNodeClient,
     'gnode_storage_adapter' => $adapter
 ];

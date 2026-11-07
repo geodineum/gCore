@@ -30,12 +30,6 @@ class SecurityManager implements ModuleInterface, SecurityCapabilityInterface {
         'default_role' => 'guest',
         'require_2fa' => false,
         'content_security_policy' => [],
-        'cors' => [
-            'enabled' => true,
-            'allowed_origins' => ['*'],
-            'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            'allowed_headers' => ['Content-Type', 'Authorization', 'X-API-Key'],
-        ],
         'traits' => [],
     ];
 
