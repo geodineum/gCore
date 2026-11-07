@@ -11,9 +11,9 @@
         }
     ],
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.1",
         "ext-json": "*",
-        "ext-redis": "^5.2",
+        "ext-redis": ">=5.2",
         "ext-mbstring": "*",
         "ext-igbinary": "^3.0",
         "ext-zlib": ">=1.2"
