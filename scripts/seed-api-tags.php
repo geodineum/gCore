@@ -37,7 +37,6 @@ $MAP = [
     'HtaccessManager' => ['setupHtaccess','addHtaccessRule','getHtaccessPath','generateHtaccessRules','ensureIPBlockSection'],
     'IPBlockManager' => ['blockIP','unblockIP','getBlockedIPs','cleanExpiredBlocks'],
     'VersionManager' => ['getVersion','incrementVersion','decrementVersion','resetVersion','getHistory','clearHistory','incrementAllVersions','registerGroup','getPrefix','generateKey'],
-    'InstallManager' => ['verifyIntegrity','getWarrantyInfo','getInstalledExtensions','getAvailableExtensions','validateLicense','subscribeToNotifications','installExtension','updateExtension','setupEnvironment','validateEnvironment'],
     'BackupManager' => ['createBackup','restoreBackup','cleanOldBackups'],
 ];
 $curated = [];

@@ -120,17 +120,6 @@
     "node_id": "node1"
   },
 
-  "InstallManager": {
-    "site_id": "default",
-    "node_id": "node1",
-    "debug": "false",
-    "auto_verify": "true",
-    "verify_interval": "86400",
-    "use_gnode": "true",
-    "permissions.files": "420",
-    "permissions.directories": "493"
-  },
-
   "SecurityManager": {
     "site_id": "default",
     "node_id": "node1",

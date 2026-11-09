@@ -56,7 +56,6 @@ All 22 managers have a README in `managers/<Name>/`:
 | [ErrorManager](managers/ErrorManager/README_ErrorManager.md) | `managers/ErrorManager/` |
 | [FormatManager](managers/FormatManager/README_FormatManager.md) | `managers/FormatManager/` |
 | [InferenceManager](managers/InferenceManager/README_InferenceManager.md) | `managers/InferenceManager/` |
-| [InstallManager](managers/InstallManager/README_InstallManager.md) | `managers/InstallManager/` |
 | [ManifestManager](managers/ManifestManager/README_ManifestManager.md) | `managers/ManifestManager/` |
 | [MetricsManager](managers/MetricsManager/README_MetricsManager.md) | `managers/MetricsManager/` |
 | [OptimizationManager](managers/OptimizationManager/README_OptimizationManager.md) | `managers/OptimizationManager/` |

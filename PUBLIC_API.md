@@ -13,7 +13,7 @@
 - `getInstance(): self` — Get singleton instance
 - `initialize(array $config = []): void` — Initialize core system
 - `isServiceActive(string $service): bool` — Check if service is active
-- `getService(string $service = null, array $capabilities = []): object` — Get service instance
+- `getService(?string $service = null, array $capabilities = []): object` — Get service instance
 - `getStorage(): ?\gCore\gNode\Storage\ValKeyStorage` — Get the shared gNode storage instance
 - `getStorageAdapter(): ?\gCore\Modules\Storage\gNodeStorageAdapter` — Get the shared gNode storage adapter (singleton)
 - `getExtensionStatus(): array` — Get status of all extension packages
@@ -46,7 +46,7 @@
 
 - `addMiddleware(string $name, callable $handler): bool` — Add middleware
 - `registerEndpoint(string $method, string $path, callable $handler, array $options = []): bool` — Register API endpoint
-- `start(int $port = null, string $host = null): bool` — Start the API server
+- `start(?int $port = null, ?string $host = null): bool` — Start the API server
 - `processRequest(): void` — Process the current HTTP request
 
 ### `AssetManager`
@@ -177,20 +177,6 @@
 - `unblockIP(string $ip): bool` — Remove IP from .htaccess block list
 - `getBlockedIPs(): array` — Get list of blocked IPs with metadata
 - `cleanExpiredBlocks(): int` — Clean expired IP blocks. Should be called periodically (e.g. daily cron)
-
-### `InstallManager`
-<sub>`Modules/Managers/Base/InstallManager/InstallManager.php`</sub>
-
-- `getAvailableExtensions(?string $type = null): array` — Get available extensions from geodineum.com registry
-- `installExtension(string $extensionId, ?string $licenseKey = null): array` — Install an extension from geodineum.com
-- `updateExtension(string $extensionId): array` — Update an installed extension
-- `getInstalledExtensions(): array` — Get installed extensions
-- `verifyIntegrity(bool $force = false): array` — Verify system integrity against geodineum.com hash registry
-- `getWarrantyInfo(): array` — Get warranty information
-- `validateLicense(string $licenseKey, ?string $product = null): bool` — Validate a license key
-- `setupEnvironment(): array` — First-run environment setup
-- `validateEnvironment(): array` — Validate environment requirements
-- `subscribeToNotifications(callable $callback): bool` — Subscribe to installation notifications
 
 ### `ResourceManager`
 <sub>`Modules/Managers/Base/ResourceManager/ResourceManager.php`</sub>

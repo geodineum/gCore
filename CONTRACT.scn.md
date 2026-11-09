@@ -29,8 +29,8 @@ seams = gCore\Modules\Core\Seams — named points in FREE code an optional impl 
   Pro registration = composer extra.gcore.bootstrap callable, collected by bootstrap.php's Pro overlay, invoked inside catch(\Throwable) ⇒ a package that fatals on register leaves seams unfilled + 1 log line, site unaffected.
   WHY ≠ substitution: substitution forces a paid impl to re-implement the free manager (5,081 stub lines) to extend it, so its \Error removes the free behaviour too.
 ≠ classifier: services.yaml is advisory metadata, NOT the authoritative classifier (see §6.3).
-roster = 13 REAL-BASE build-with + 11 CH1-STUB build-with + 2 install/deploy (also build-with) = 26 documented.
-  15 on-disk Base/ dirs = 13 build-with-base + InstallManager + BackupManager.
+roster = 13 REAL-BASE build-with + 11 CH1-STUB build-with + 1 install/deploy (also build-with) = 25 documented.
+  14 on-disk Base/ dirs = 13 build-with-base + BackupManager.
 key types: ModuleInterface (universal lifecycle ∀ manager: getInstance/initialize/getConfig/updateConfig/isInitialized/getStatus); per-manager <Name>ManagerInterface in Modules/Core/Interfaces/Extensions/ (the public per-manager contracts).
 
 ## ::ARCHITECTURE
@@ -57,7 +57,7 @@ gCore introspection: getExtensionStatus() (installed/mode full|stub/class/packag
 PROVIDES (build-with manager APIs, accessed via container/getInstance):
   13 REAL-BASE: SecurityManager · ErrorManager · CacheManager · FormatManager · APIManager · StateManager · WordPressManager · CookieManager · ResourceManager · AssetManager · HtaccessManager · IPBlockManager · VersionManager.
   11 CH1-STUB (interface honored, behavior degraded): TemplateManager · TopologyManager · SEOManager · OptimizationManager · ManifestManager · MetricsManager · AnalyticsManager · CommsManager · InferenceManager · TranslateManager · EcommerceManager.
-  2 install/deploy (build-with, lifecycle-flagged): InstallManager · BackupManager.
+  1 install/deploy (build-with, lifecycle-flagged): BackupManager.
 CONSUMES:
   gNode-Client → ValKey FCALL (GCORE_MGR_CONFIG_*, GCORE_MGR_SECRETS_*, GNODE_CACHE_*, GNODE_STREAM_*, GNODE_TRANSACTION_*, GNODE_LOCK_*) | streams | broadcast.
   ValKey → per-site keyspace {site_id}:gcore:config:<Manager>, secrets keyspace, cache/state/stream namespaces.
@@ -95,7 +95,6 @@ TranslateManager · public · getService(TranslateManager) · CH1 STUB: returns 
 EcommerceManager · public · getService(EcommerceManager) · CH1 STUB: adapter auto-detect (WooCommerceAdapter shipped) + delegation for cart/product/inventory; caching/analytics/checkout-security all no-op. NO Pro package yet — stub IS the ONLY impl. services.yaml extension (CORRECT).
 
 — INSTALL/DEPLOY-TIME (build-with, FLAGGED not hidden; PRIMARY lifecycle = install/deploy, runtime APIs exposed) —
-InstallManager · public · InstallManager::getInstance() ONLY · extension install, file-integrity vs geodineum.com registry, warranty tracking, gNode distributed locking. install/deploy-heavy BUT runtime verifyIntegrity()/getWarrantyInfo() callable by builders. NOT in services.yaml, so getService(InstallManager) is NOT wired in CH1 (throws); NO register.php entry (core-loaded, not extension-resolved). InstallManager.php.
 BackupManager · public · BackupManager::getInstance() · filesystem backup/restore/retention under {base}/backups/. backup/restore lifecycle + Geodineum-BAK hooks (README public 'Backup hooks for Geodineum-BAK'); createBackup/restoreBackup/cleanOldBackups runtime-callable. No getService alias; not in services.yaml; not in register.php (core-loaded). BackupManager.php.
 
 — INTERNAL-LIFECYCLE/PLUMBING SET (NOT build-with) —
@@ -117,8 +116,8 @@ gotchas: services.yaml `class:` is VESTIGIAL for resolution — ExtensionResolve
 failure modes: APIManager auth → hard 503 if SecurityManager absent (not graceful). IPBlockManager↔HtaccessManager hard dep. CookieManager hard dep ErrorManager+CacheManager. singleton-only (no DI). circular topology → NOT detected at runtime (TopologyParser has no cycle check; the detecting pair is CLI-only) ⇒ a cycle presents as recursion/partial init, not an exception. one gCore instance/process (no clone/wakeup).
 
 ## ::GRAPH
-DEPENDS_ON: gCore → gNode-Client → ValKey ; gCore → ConfigLoader/TopologyParser/ExtensionResolver ; ∀ ValKey-managers → gNodeStorageAdapter (singleton) ; FormatManager → gNode-Client (hard) ; CookieManager → ErrorManager + CacheManager (hard) ; APIManager → SecurityManager (hard 503) + StateManager (soft) ; SecurityManager → StateManager (T2 rate-limit) + gNode-Client (T0/T1) ; IPBlockManager → HtaccessManager (hard) ; VersionManager → CacheManager ; ResourceManager → CacheManager+OptimizationManager+MetricsManager+StateManager (all soft) ; SEOManager(stub) → InferenceManager(stub) ⇒ GEO/AIO=error ; InstallManager → ErrorManager+CacheManager+gNode-Client+geodineum.com.
-PROVIDES_TO: gCore.getService → builder app/plugin code ; managers → <Name>ManagerInterface contracts (Modules/Core/Interfaces/Extensions/) ; HtaccessManager → IPBlockManager + install flows ; BackupManager → Geodineum-BAK hooks ; InstallManager.subscribeToNotifications → gNode PubSub (gcore:install:notifications:{site_id}).
+DEPENDS_ON: gCore → gNode-Client → ValKey ; gCore → ConfigLoader/TopologyParser/ExtensionResolver ; ∀ ValKey-managers → gNodeStorageAdapter (singleton) ; FormatManager → gNode-Client (hard) ; CookieManager → ErrorManager + CacheManager (hard) ; APIManager → SecurityManager (hard 503) + StateManager (soft) ; SecurityManager → StateManager (T2 rate-limit) + gNode-Client (T0/T1) ; IPBlockManager → HtaccessManager (hard) ; VersionManager → CacheManager ; ResourceManager → CacheManager+OptimizationManager+MetricsManager+StateManager (all soft) ; SEOManager(stub) → InferenceManager(stub) ⇒ GEO/AIO=error
+PROVIDES_TO: gCore.getService → builder app/plugin code ; managers → <Name>ManagerInterface contracts (Modules/Core/Interfaces/Extensions/) ; HtaccessManager → IPBlockManager + install flows ; BackupManager → Geodineum-BAK hooks.
 ADHERES_TO: ModuleInterface ∀ manager (universal lifecycle) ; init/priority-ascending load order (gCore.php bootstrapRequiredServices): Security(1)→Error(2)→Cache(3)→Template/State/WordPress(4)→Format/Topology(5)→API(6)→SEO(7)→Optimization(8)→Manifest(9); feature Cookie(12)/Metrics(15)/Resource(23); extension 100+ ; CommsManager settings ⊨ Rust ChannelConfig serde SHAPE (CH1 shape-only, no I/O) ; classifier ⊨ register.php $baseManagers/$stubOnlyManagers (services.yaml NON-authoritative, advisory metadata).
 ISOLATED_FROM (CH2 Pro, EXCLUDED): all gcore-<short> Pro packages — TemplateManagerPro, TopologyManagerPro, SEOManagerPro, OptimizationManagerPro, ManifestManagerPro, MetricsManagerPro, AnalyticsManagerPro, CommsManagerPro, InferenceManagerPro, TranslateManagerPro, (no EcommerceManagerPro yet) ; CH2 Pro managers (out of scope) ; Pro method surfaces — named only, never documented here.
 

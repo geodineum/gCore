@@ -49,7 +49,6 @@ Each manager is a singleton reached through `getService()`. The **first-party (B
 | WordPressManager | DB cloning, DTAP env switching, GDPR PII scrub | [docs/README_WORDPRESS.md](docs/README_WORDPRESS.md) |
 | HtaccessManager | Locked `.htaccess` composition + write-out | [docs/README_HTACCESS.md](docs/README_HTACCESS.md) |
 | IPBlockManager | Apache-level IP block/unblock/expire via `.htaccess` | [docs/README_IPBLOCK.md](docs/README_IPBLOCK.md) |
-| InstallManager | Extension install + file-integrity verification (install/deploy) | [docs/README_INSTALL.md](docs/README_INSTALL.md) |
 | BackupManager | Filesystem backup/restore/retention (install/deploy) | [docs/README_BACKUP.md](docs/README_BACKUP.md) |
 
 ### Extension managers - stub in Chapter 1, Pro in Chapter 2
