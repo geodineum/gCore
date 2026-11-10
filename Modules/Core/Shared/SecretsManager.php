@@ -21,8 +21,6 @@ class SecretsManager {
      */
     const BACKEND_ENV = 'env';
     const BACKEND_FILE = 'file';
-    const BACKEND_VALKEY = 'valkey';
-    const BACKEND_HSM = 'hsm';
     
     /**
      * Secret types with different security requirements
@@ -172,60 +170,10 @@ class SecretsManager {
             return $value;
         }
 
-        // Try preferred backend
-        switch ($preferredBackend) {
-            case self::BACKEND_ENV:
-                // Already tried above
-                break;
-                
-            case self::BACKEND_FILE:
-                $value = self::getFromFile($key);
-                if ($value !== null) {
-                    self::$secrets[$key] = $value;
-                    return $value;
-                }
-                break;
-                
-            case self::BACKEND_VALKEY:
-                $value = self::getFromValKey($key);
-                if ($value !== null) {
-                    self::$secrets[$key] = $value;
-                    return $value;
-                }
-                break;
-                
-            case self::BACKEND_HSM:
-                $value = self::getFromHSM($key);
-                if ($value !== null) {
-                    self::$secrets[$key] = $value;
-                    return $value;
-                }
-                break;
-        }
-
-        // Fallback to other backends if preferred backend failed
-        if ($preferredBackend !== self::BACKEND_FILE) {
-            $value = self::getFromFile($key);
-            if ($value !== null) {
-                self::$secrets[$key] = $value;
-                return $value;
-            }
-        }
-        
-        if ($preferredBackend !== self::BACKEND_VALKEY) {
-            $value = self::getFromValKey($key);
-            if ($value !== null) {
-                self::$secrets[$key] = $value;
-                return $value;
-            }
-        }
-        
-        if ($preferredBackend !== self::BACKEND_HSM) {
-            $value = self::getFromHSM($key);
-            if ($value !== null) {
-                self::$secrets[$key] = $value;
-                return $value;
-            }
+        $value = self::getFromFile($key);
+        if ($value !== null) {
+            self::$secrets[$key] = $value;
+            return $value;
         }
 
         // If we get here, we couldn't find the secret
@@ -248,7 +196,7 @@ class SecretsManager {
      * @throws SecurityException If the access level is not authorized
      * @throws ValidationException If the secret value is invalid
      */
-    public static function setSecret(string $key, $value, string $accessLevel = 'system', string $backend = self::BACKEND_VALKEY) {
+    public static function setSecret(string $key, $value, string $accessLevel = 'system', string $backend = self::BACKEND_FILE) {
         // Check if we have access to set this secret
         if (!self::hasAccess($key, $accessLevel)) {
             throw new SecurityException("Access denied to set secret: $key with access level: $accessLevel");
@@ -262,16 +210,8 @@ class SecretsManager {
         // Store in the specified backend
         $result = false;
         switch ($backend) {
-            case self::BACKEND_VALKEY:
-                $result = self::setInValKey($key, $value);
-                break;
-                
             case self::BACKEND_FILE:
                 $result = self::setInFile($key, $value);
-                break;
-                
-            case self::BACKEND_HSM:
-                $result = self::setInHSM($key, $value);
                 break;
                 
             case self::BACKEND_ENV:
@@ -304,17 +244,8 @@ class SecretsManager {
 
         $result = true;
         
-        // Delete from specified backend or all backends
-        if ($backend === null || $backend === self::BACKEND_VALKEY) {
-            $result = $result && self::deleteFromValKey($key);
-        }
-        
         if ($backend === null || $backend === self::BACKEND_FILE) {
-            $result = $result && self::deleteFromFile($key);
-        }
-        
-        if ($backend === null || $backend === self::BACKEND_HSM) {
-            $result = $result && self::deleteFromHSM($key);
+            $result = self::deleteFromFile($key);
         }
 
         // Remove from cache
@@ -356,18 +287,6 @@ class SecretsManager {
         // Check requested backends
         if ($backend === null || $backend === self::BACKEND_FILE) {
             if (self::existsInFile($key)) {
-                return true;
-            }
-        }
-        
-        if ($backend === null || $backend === self::BACKEND_VALKEY) {
-            if (self::existsInValKey($key)) {
-                return true;
-            }
-        }
-        
-        if ($backend === null || $backend === self::BACKEND_HSM) {
-            if (self::existsInHSM($key)) {
                 return true;
             }
         }
@@ -512,211 +431,6 @@ class SecretsManager {
         }
         
         return file_put_contents($secretsFile, json_encode($secrets, JSON_PRETTY_PRINT)) !== false;
-    }
-
-    /**
-     * Get ValKey connection configuration from environment variables.
-     * No hardcoded fallbacks — env vars must be set.
-     *
-     * @return array ValKey config array
-     * @throws \RuntimeException If required env vars are missing
-     */
-    private static function getValKeyConfig(): array {
-        $host = getenv('VALKEY_HOST');
-        $port = getenv('VALKEY_PORT');
-        if (!$host || !$port) {
-            throw new \RuntimeException(
-                'SecretsManager requires VALKEY_HOST and VALKEY_PORT environment variables'
-            );
-        }
-        return [
-            'host' => $host,
-            'port' => (int)$port,
-            'timeout' => 2.0,
-            'read_timeout' => 2.0,
-            'persistent' => false,
-            'prefix' => 'gcore_secrets:'
-        ];
-    }
-
-    /**
-     * Get a secret from ValKey/Redis
-     *
-     * @param string $key The secret key
-     * @return mixed|null The secret value or null if not found
-     */
-    private static function getFromValKey(string $key) {
-        try {
-            // Make sure we can access ValKey
-            if (!class_exists('\\gCore\\Core\\Adapters\\Shared\\ValKeyStorage')) {
-                return null;
-            }
-
-            // We need special initialization to avoid circular dependencies
-            $valkey = \gCore\Core\Adapters\Shared\ValKeyStorage::getInstance(self::getValKeyConfig());
-            
-            // Check if secret exists
-            if (!$valkey->exists($key)) {
-                return null;
-            }
-
-            // Get the secret
-            $value = $valkey->get($key);
-            if ($value === false) {
-                return null;
-            }
-
-            // Check if it's JSON encoded
-            $decoded = json_decode($value, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                return $decoded;
-            }
-
-            return $value;
-        } catch (\Exception $e) {
-            error_log("[gCore] SecretsManager::getFromValKey failed for key '{$key}': " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Set a secret in ValKey/Redis
-     *
-     * @param string $key The secret key
-     * @param mixed $value The secret value
-     * @return bool True if successful
-     */
-    private static function setInValKey(string $key, $value) {
-        try {
-            // Make sure we can access ValKey
-            if (!class_exists('\\gCore\\Core\\Adapters\\Shared\\ValKeyStorage')) {
-                return false;
-            }
-
-            // We need special initialization to avoid circular dependencies
-            $valkey = \gCore\Core\Adapters\Shared\ValKeyStorage::getInstance(self::getValKeyConfig());
-
-            // Encode complex values as JSON
-            $valueToStore = is_array($value) || is_object($value) ? json_encode($value) : $value;
-            
-            // Store the secret
-            return $valkey->set($key, $valueToStore) !== false;
-        } catch (\Exception $e) {
-            error_log("[gCore] SecretsManager::setInValKey failed for key '{$key}': " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Check if a secret exists in ValKey/Redis
-     *
-     * @param string $key The secret key
-     * @return bool True if the secret exists
-     */
-    private static function existsInValKey(string $key) {
-        try {
-            // Make sure we can access ValKey
-            if (!class_exists('\\gCore\\Core\\Adapters\\Shared\\ValKeyStorage')) {
-                return false;
-            }
-
-            // We need special initialization to avoid circular dependencies
-            $valkey = \gCore\Core\Adapters\Shared\ValKeyStorage::getInstance(self::getValKeyConfig());
-
-            return $valkey->exists($key);
-        } catch (\Exception $e) {
-            error_log("[gCore] SecretsManager::existsInValKey failed for key '{$key}': " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Delete a secret from ValKey/Redis
-     *
-     * @param string $key The secret key
-     * @return bool True if successful
-     */
-    private static function deleteFromValKey(string $key) {
-        try {
-            // Make sure we can access ValKey
-            if (!class_exists('\\gCore\\Core\\Adapters\\Shared\\ValKeyStorage')) {
-                return false;
-            }
-
-            // We need special initialization to avoid circular dependencies
-            $valkey = \gCore\Core\Adapters\Shared\ValKeyStorage::getInstance(self::getValKeyConfig());
-
-            return $valkey->del($key) !== false;
-        } catch (\Exception $e) {
-            error_log("[gCore] SecretsManager::deleteFromValKey failed for key '{$key}': " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Get a secret from Hardware Security Module
-     *
-     * @param string $key The secret key
-     * @return mixed|null The secret value or null if not found
-     */
-    private static function getFromHSM(string $key) {
-        // HSM is only used for specific keys
-        $hsmKeys = [
-            'security.hardware.pin',
-            'security.hardware.yubikey.management_key',
-            'security.encryption.key'
-        ];
-        
-        if (!in_array($key, $hsmKeys)) {
-            return null;
-        }
-
-        try {
-            // Check if HardwareSecurityTrait is available
-            if (!class_exists('\\gCore\\Managers\\Base\\SecurityManager\\Traits\\HardwareSecurityTrait')) {
-                return null;
-            }
-
-            // This would require more complex implementation and depends on the actual HSM setup
-            // For now, return null to indicate not implemented
-            return null;
-        } catch (\Exception $e) {
-            error_log("[gCore] SecretsManager::getFromHSM failed for key '{$key}': " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Set a secret in Hardware Security Module
-     *
-     * @param string $key The secret key
-     * @param mixed $value The secret value
-     * @return bool True if successful
-     */
-    private static function setInHSM(string $key, $value) {
-        // Not implemented - HSM typically doesn't allow setting secrets this way
-        return false;
-    }
-
-    /**
-     * Check if a secret exists in Hardware Security Module
-     *
-     * @param string $key The secret key
-     * @return bool True if the secret exists
-     */
-    private static function existsInHSM(string $key) {
-        return self::getFromHSM($key) !== null;
-    }
-
-    /**
-     * Delete a secret from Hardware Security Module
-     *
-     * @param string $key The secret key
-     * @return bool True if successful
-     */
-    private static function deleteFromHSM(string $key) {
-        // Not implemented - HSM typically doesn't allow deleting secrets this way
-        return false;
     }
 
     /**

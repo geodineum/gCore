@@ -1791,16 +1791,6 @@ parameters:
 			path: Modules/Core/Shared/DependencyBundle.php
 
 		-
-			message: "#^Left side of && is always true\\.$#"
-			count: 1
-			path: Modules/Core/Shared/SecretsManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Core\\\\Shared\\\\SecretsManager\\:\\:getValKeyConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Core/Shared/SecretsManager.php
-
-		-
 			message: "#^Property gCore\\\\Modules\\\\Core\\\\Shared\\\\SecretsManager\\:\\:\\$accessLevels type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: Modules/Core/Shared/SecretsManager.php

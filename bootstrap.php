@@ -28,7 +28,6 @@ if (!defined('GCORE_VERSION')) {
 //   Tier 3 (file):   /etc/geodineum/components/gCore/gcore.env (gCore-specific)
 //
 // Mirrors bash lib/bootstrap-loader.sh and Rust daemon/src/ecosystem_config.rs.
-// See Geodineum-pro/deep/remediation/COMMIT_0.1_DESIGN.md.
 // ==============================================================================
 
 require_once __DIR__ . '/Bootstrap/EcosystemConfigLoader.php';

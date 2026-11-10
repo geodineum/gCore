@@ -2,11 +2,10 @@
 
 ## Overview
 
-SecretsManager provides centralized secrets and credential management for gCore applications. It supports multiple storage backends with automatic fallback, access control based on privilege levels, and type-specific validation.
+SecretsManager provides centralized secrets and credential management for gCore applications. It reads from environment variables, then `config/secrets.json`, with access control based on privilege levels, and type-specific validation.
 
 **Key Features:**
-- Multi-backend support (ENV, File, ValKey, HSM)
-- Fallback chain for resilient secret retrieval
+- Two backends: ENV (read-only) and File
 - Role-based access control (system, admin, public)
 - Type-specific secret validation
 - In-memory caching for performance
@@ -20,8 +19,6 @@ SecretsManager provides centralized secrets and credential management for gCore 
 |---------|----------|----------|------------|
 | `BACKEND_ENV` | 1 (highest) | Environment variables | Read-only |
 | `BACKEND_FILE` | 2 | config/secrets.json | Read/Write |
-| `BACKEND_VALKEY` | 3 | ValKey/Redis storage | Read/Write |
-| `BACKEND_HSM` | 4 | Hardware Security Module | Read-only |
 
 ### Retrieval Fallback Chain
 
@@ -34,9 +31,7 @@ getSecret('cache.auth')
     │
     ├─► Check ENV (VALKEY_AUTH) ──► Found? ──► Cache & return
     │
-    ├─► Check preferred backend ──► Found? ──► Cache & return
-    │
-    ├─► Try remaining backends ──► Found? ──► Cache & return
+    ├─► Check config/secrets.json ──► Found? ──► Cache & return
     │
     └─► Not found ──► Required? ──► ValidationException
                   └─► Optional? ──► Return null
@@ -59,7 +54,7 @@ public static function getSecret(
 **Parameters:**
 - `$key` - Dot-notation secret path (e.g., `cache.auth`)
 - `$accessLevel` - Requester's access level (`system`, `admin`, `public`)
-- `$preferredBackend` - First backend to try after ENV
+- `$preferredBackend` - Accepted for compatibility; ENV is tried first, then the file
 
 **Returns:** Secret value or `null` if not found and not required
 
@@ -71,13 +66,6 @@ public static function getSecret(
 ```php
 // Get ValKey password (defaults: system access, env preferred)
 $password = SecretsManager::getSecret('cache.auth');
-
-// Get with explicit backend preference
-$smtpPass = SecretsManager::getSecret(
-    'notifications.smtp.password',
-    'system',
-    SecretsManager::BACKEND_FILE
-);
 ```
 
 ### setSecret()
@@ -89,7 +77,7 @@ public static function setSecret(
     string $key,
     mixed $value,
     string $accessLevel = 'system',
-    string $backend = self::BACKEND_VALKEY
+    string $backend = self::BACKEND_FILE
 ): bool
 ```
 
@@ -107,20 +95,9 @@ public static function setSecret(
 
 **Example:**
 ```php
-// Store API key in ValKey
-SecretsManager::setSecret(
-    'api.stripe.secret',
-    'sk_live_xxxxxxxxxxxxx',
-    'system',
-    SecretsManager::BACKEND_VALKEY
-);
-
-// Store in file
 SecretsManager::setSecret(
     'custom.config.value',
-    ['nested' => 'data'],
-    'system',
-    SecretsManager::BACKEND_FILE
+    ['nested' => 'data']
 );
 ```
 
@@ -145,9 +122,6 @@ public static function deleteSecret(
 ```php
 // Delete from all backends
 SecretsManager::deleteSecret('deprecated.old.key');
-
-// Delete only from ValKey
-SecretsManager::deleteSecret('temp.session.key', 'system', SecretsManager::BACKEND_VALKEY);
 ```
 
 ### secretExists()
@@ -334,16 +308,9 @@ if (SecretsManager::secretExists('optional.feature.key')) {
 2. Check for typos in key path
 3. System-level secrets require `accessLevel = 'system'`
 
-### ValKey Backend Failing
-
-1. Ensure ValKey is running: `redis-cli ping`
-2. Check `ValKeyStorage` class exists
-3. Verify connection settings (default: 127.0.0.1:6379)
-
 ## Security Considerations
 
 1. **Never log secret values** - Log key names only
-2. **Use HSM for critical keys** - Encryption keys, HSM PINs
-3. **Rotate secrets regularly** - Use `clearCache()` after rotation
-4. **Restrict file permissions** - secrets.json should be 0600
-5. **Prefer ENV in production** - Immutable after process start
+2. **Rotate secrets regularly** - Use `clearCache()` after rotation
+3. **Restrict file permissions** - secrets.json should be 0600
+4. **Prefer ENV in production** - Immutable after process start
