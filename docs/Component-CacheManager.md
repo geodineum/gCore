@@ -24,7 +24,6 @@ The CacheManager architecture has been enhanced with a modular script system:
 
 - **CacheManager**: Main manager class implementing ModuleInterface
 - **ValKeyStorage**: Low-level storage operations
-- **ValKeyConnectionPool**: Connection management with pooling
 
 ### Modular Script System
 
@@ -349,7 +348,6 @@ $status = $pool->getCircuitStatus('redis_get');
 - `publish(string $channel, string $message): int` - Publishes a message to a channel.
 - `subscribe(string $channel, callable $callback): void` - Subscribes to messages on a channel.
 - `runScript(string $name, array $keys = [], array $args = []): mixed` - Runs a ValKey/Redis Lua script.
-- `getConnectionPool(): ValKeyConnectionPool` - Gets the ValKey connection pool.
 - `getStatus(): array` - Returns the current status of the cache system.
 
 ### StreamCapabilities Trait
@@ -367,19 +365,6 @@ $status = $pool->getCircuitStatus('redis_get');
 - `streamPending(string $stream, string $group): array` - Gets pending messages for a consumer group.
 - `streamClaim(string $stream, string $group, string $consumer, int $minIdleTime, array $ids): array` - Claims pending messages for a consumer.
 - `streamInfo(string $stream): array` - Gets information about a stream.
-
-### ValKeyConnectionPool
-
-- `getInstance(): ValKeyConnectionPool` - Returns the singleton instance of the connection pool.
-- `initialize(array $config = []): void` - Initializes the connection pool with configuration.
-- `getConnection(?string $preferredNode = null): ?\Redis` - Gets a connection from the pool.
-- `releaseConnection(\Redis $connection): void` - Releases a connection back to the pool.
-- `executeWithConnection(callable $callback, ?string $preferredNode = null): mixed` - Executes a callback with a connection from the pool.
-- `executeWithRetry(callable $callback, int $maxRetries = 3, int $retryDelay = 100): mixed` - Executes a callback with retry logic.
-- `invalidateConnection(\Redis $connection): void` - Marks a connection as invalid.
-- `getConnectionStats(): array` - Gets statistics about the connection pool.
-- `isCircuitOpen(string $context): bool` - Checks if the circuit breaker is open for a specific context.
-- `getPoolSize(): int` - Gets the maximum size of the connection pool.
 
 ### CacheScripts Classes
 

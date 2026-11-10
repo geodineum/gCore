@@ -407,7 +407,6 @@ The APIManager supports multiple server modes:
    - Verify proper class loading and namespaces
 
 3. **Performance Problems**
-   - Enable connection pooling with `ValKeyConnectionPool`
    - Use batch operations instead of individual operations
    - Implement appropriate caching for API responses
    - Consider using the script system for complex operations

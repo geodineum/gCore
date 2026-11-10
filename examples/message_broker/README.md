@@ -269,7 +269,6 @@ The enhanced implementation uses the CacheManager's script-based optimizations:
   - `CacheScriptsBatchOperations` for multi-key efficiency
   - `CacheScriptsHashOperations` for metadata management
   - `CacheScriptsStreamOperations` for stream-based queues
-- Utilizes the `ValKeyConnectionPool` for connection reuse and resilience
 - Implements the `AdaptiveBackoffTrait` for intelligent retry logic
 
 ### ErrorManager Integration
