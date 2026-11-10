@@ -1,10 +1,10 @@
 # gCore — Integration Contract
 
-PHP service-container framework: a singleton "manager-of-managers" that bootstraps, configures, and hands out 26 first-party managers (15 on-disk Base + 11 stub-only) to application/plugin builders. PSR-4 namespace `gCore`, ValKey-backed via gNode-Client, WordPress-aware. The build-with surface is the **manager classes** (and their `Modules/Core/Interfaces/Extensions/<Name>ManagerInterface` contracts); helpers/traits/adapters beneath them are internal plumbing.
+PHP service-container framework: a singleton "manager-of-managers" that bootstraps, configures, and hands out 23 first-party managers (12 on-disk Base + 11 stub-only) to application/plugin builders. PSR-4 namespace `gCore`, ValKey-backed via gNode-Client, WordPress-aware. The build-with surface is the **manager classes** (and their `Modules/Core/Interfaces/Extensions/<Name>ManagerInterface` contracts); helpers/traits/adapters beneath them are internal plumbing.
 
 > **Scope — Chapter 1 only.** This contract documents the CH1 build-with surface. Chapter-2 "Pro" managers (the `geodineum/gcore-<short>` packages) are **out of scope**: where a CH1 manager is a stub, this contract names that a Pro exists but does **not** document Pro methods or behavior.
 
-> **Authoritative CH1 classifier.** A manager's CH1 status is determined by **on-disk reality** — `ls Modules/Managers/Base/` corroborated by `Modules/Managers/Stubs/register.php` (`$baseManagers` vs `$stubOnlyManagers`, loaded via composer `autoload.files` before any `getService()`). `config/services.yaml` is advisory metadata and is NOT the classifier (see §6.3). 14 Base/ directories exist on disk; 11 managers are stub-only.
+> **Authoritative CH1 classifier.** A manager's CH1 status is determined by **on-disk reality** — `ls Modules/Managers/Base/` corroborated by `Modules/Managers/Stubs/register.php` (`$baseManagers` vs `$stubOnlyManagers`, loaded via composer `autoload.files` before any `getService()`). `config/services.yaml` is advisory metadata and is NOT the classifier (see §6.3). 12 Base/ directories exist on disk; 11 managers are stub-only.
 
 ---
 
@@ -33,7 +33,7 @@ PHP service-container framework: a singleton "manager-of-managers" that bootstra
 | `error`, `logging` | ErrorManager | `gCore.php` |
 | `api`, `rest` | APIManager | `gCore.php` |
 
-All other managers are reached by **class name** (`getService('CookieManager')`) or by `getInstance()`; the access path per manager is listed in §2–§4.
+All other managers are reached by **class name** (`getService('CookieManager')`) or by `getInstance()`; the access path per manager is listed in §2–§3.
 
 ### 1.3 Discovery & introspection
 
@@ -130,7 +130,7 @@ Evidence: `Modules/Core/Seams.php`; `bootstrap.php` (Pro overlay);
 
 ## 2. BUILD-WITH — REAL BASE managers (CH1 = full impl; Base class is canonical, no Pro)
 
-13 build-with Base managers. (The 14 `Base/` dirs = these 13 + BackupManager, documented in §4 as install/deploy-heavy.) All implement `ModuleInterface` (§6.4).
+11 build-with Base managers. (The 12 `Base/` dirs = these 11 + CapabilityManager.) All implement `ModuleInterface` (§6.4).
 
 ### 2.1 SecurityManager
 - **Access:** `getService('security'|'auth'|'crypto'|'SecurityManager')`; `getInstance()`. Source: `gCore.php`; `Base/SecurityManager/SecurityManager.php`; `services.yaml` (category=core, priority=1).
@@ -193,19 +193,7 @@ Evidence: `Modules/Core/Seams.php`; `bootstrap.php` (Pro overlay);
 - **Key public methods:** `storeAsset(string $assetId, string $content, string $contentType='text/html', array $options=[]): array`; `getAsset(string $assetId): ?array`; `deleteAsset/listAssets/assetExists`; `setManifest(string $manifestId, array $manifest): array`; `getManifest/deleteManifest/listManifests`; `getBundle(string $manifestId='main', bool $decompress=true): ?array`; `getBundleStatus(string $manifestId): ?array`; `invalidateBundle(string $manifestId='main'): bool`; `syncFaceMapping(array $faceMapping): bool`.
 - **CH1:** REAL BASE. Falls back to in-memory-only (per-request) when gNode-Client unavailable; bundle retrieval requires gNode.
 
-### 2.11 HtaccessManager
-- **Access:** `HtaccessManager::getInstance()` (**no `getService` alias**). Source: `HtaccessManager.php`; `Base/HtaccessManager/`.
-- **Role:** Apache `.htaccess` generation + locked read-modify-write + IP-block section scaffolding. Build-with but niche (consumed by IPBlockManager and install flows).
-- **Key public methods:** `setupHtaccess(): bool`; `addHtaccessRule(string $rule, string $section='Custom'): bool`; `getHtaccessPath(): ?string`; `generateHtaccessRules(): string`; `ensureIPBlockSection(string $htaccessPath): void`.
-- **CH1:** REAL BASE, full. All `.htaccess` mutations guarded by `LOCK_EX` (TOCTOU-safe). Apache-only; single-file scope.
-
-### 2.12 IPBlockManager
-- **Access:** `IPBlockManager::getInstance()` (**no `getService` alias**). Source: `IPBlockManager.php`; `Base/IPBlockManager/`.
-- **Role:** Apache-level IP block/unblock/list/expire via `.htaccess`; delegates path + section to HtaccessManager (hard dep).
-- **Key public methods:** `blockIP(string $ip, string $reason='', ?int $duration=null): bool` (validates IP, strips CR/LF/`#` to prevent comment injection); `unblockIP(string $ip): bool`; `getBlockedIPs(): array`; `cleanExpiredBlocks(): int`.
-- **CH1:** REAL BASE, full. No `LOCK_EX` on individual block/unblock (race-prone under concurrency); requires Apache + `.htaccess`.
-
-### 2.13 VersionManager
+### 2.11 VersionManager
 - **Access:** `VersionManager::getInstance()` **ONLY** — the `getService` alias is **WIP/absent in CH1**; `getInstance()` is the only supported access. Source: `VersionManager.php`; `Base/VersionManager/`.
 - **Role:** version tracking + cache invalidation, multi-tenant, gNode atomic INCR/DECR fallback.
 - **Key public methods:** `getVersion(string $group='core'): int`; `incrementVersion(string $group='core', int $amount=1): int`; `decrementVersion(...)`; `resetVersion(string $group='core', int $resetTo=1): int`; `getHistory(?string $group=null, int $limit=50): array`; `clearHistory`; `incrementAllVersions(): void`; `registerGroup(string $group, int $initial_version=1): bool`; `getPrefix(string $group='core'): string`; `generateKey(string $key, string $group='core'): string`.
@@ -279,14 +267,9 @@ Evidence: `Modules/Core/Seams.php`; `bootstrap.php` (Pro overlay);
 
 ---
 
-## 4. INTERNAL — Install/Deploy-time managers (flagged, NOT hidden)
+## 4. INTERNAL — Install/Deploy-time managers
 
-It has a `Base/` dir (so 14 Base dirs total) and remains PUBLIC build-with on the author's frame, but its **primary** lifecycle is install/deploy. It also exposes runtime-callable APIs, so it is not purely lifecycle.
-
-### 4.1 BackupManager
-- **Access:** `BackupManager::getInstance()`. Source: `Base/BackupManager/BackupManager.php`. No `getService` alias; not in `services.yaml`; not in `register.php` (core-loaded). Listed in README as public "Backup hooks for Geodineum-BAK".
-- **Role:** filesystem backup/restore/retention under `{base}/backups/`.
-- **Runtime-callable APIs:** `createBackup(string $name, string $path): ?string`; `restoreBackup(string $backupPath, string $targetPath): bool` (destructive); `cleanOldBackups(int $retentionDays=30): int`.
+None in Chapter 1.
 
 ---
 
@@ -306,7 +289,7 @@ The manager **class** is the API; the helper/trait/adapter/value-object classes 
 | `ConfigLoader` | 4-tier config load with backfill: per-request static cache → APCu (keyed on the ValKey constellation-generation counter) → ValKey → `config/compiled.php` (OPcache'd) → YAML parse | `Modules/Core/Utils/ConfigLoader.php` |
 | `TopologyParser` | Dependency pre-init at `initializeService()` — **hardcoded, not YAML-driven** (71 lines): `resolveDependencies()` returns edges for ErrorManager/CacheManager/SecurityManager/APIManager only and `[]` for every other service; `isServiceRequired()`/`getServiceType()`/`getServiceImplementation()` ignore `services.yaml` entirely. **No circular-dependency detection.** Single call site: `gCore.php` | `Modules/Core/Utils/TopologyParser.php` |
 | `SelfContainedErrorHandler` | dependency-free logging used during early init before ErrorManager is available | `Modules/Core/Utils/SelfContainedErrorHandler.php` |
-| Per-manager private helpers/value-objects | e.g. AssetManager `convertFaceMappingToManifest`/`getFacePosition`; BackupManager `copyDirectory`/`removeDirectory`/`getBackupDir`; HtaccessManager `withExclusiveLock`; StateManager `getStateHashKey`/`serialize`/`notifyObservers`; `WooCommerceAdapter` concrete impl | (in respective manager dirs) |
+| Per-manager private helpers/value-objects | e.g. AssetManager `convertFaceMappingToManifest`/`getFacePosition`; StateManager `getStateHashKey`/`serialize`/`notifyObservers`; `WooCommerceAdapter` concrete impl | (in respective manager dirs) |
 
 ---
 
@@ -322,7 +305,7 @@ SecurityManager(1) → ErrorManager(2) → CacheManager(3) → TemplateManager(4
 
 > **`priority` orders initialization; the YAML `dependencies:` arrays do not.** `bootstrapRequiredServices` sorts by `priority` ascending and instantiates only the 7 services flagged `required: true` (Security, Error, Cache, Template, SEO, Optimization, Manifest) plus the separately-initialized `gnode_client`; everything else is lazy on first `getService()`. Per-service dependency pre-init goes through `TopologyParser::resolveDependencies()`, whose graph is hardcoded for four managers only — so a `dependencies:` entry in `services.yaml` is documentation, not a load-order instruction. **Nothing detects a dependency cycle at runtime** (§5: the cycle-detecting `DependencyResolver`/`DependencyBundle` pair is CLI-only).
 
-Key runtime edges: CookieManager → ErrorManager + CacheManager (**hard**, `gCore.php`). APIManager → SecurityManager (**hard 503** if absent) + StateManager (soft). ResourceManager → CacheManager/OptimizationManager/MetricsManager/StateManager (all optional, graceful). SecurityManager → StateManager (rate-limit tier-2) + gNode-Client (tier-0/1). IPBlockManager → HtaccessManager (**hard**). VersionManager → CacheManager. SEOManager(stub) → InferenceManager(stub) ⇒ GEO returns error in CH1.
+Key runtime edges: CookieManager → ErrorManager + CacheManager (**hard**, `gCore.php`). APIManager → SecurityManager (**hard 503** if absent) + StateManager (soft). ResourceManager → CacheManager/OptimizationManager/MetricsManager/StateManager (all optional, graceful). SecurityManager → StateManager (rate-limit tier-2) + gNode-Client (tier-0/1). VersionManager → CacheManager. SEOManager(stub) → InferenceManager(stub) ⇒ GEO returns error in CH1.
 
 ### 6.3 Adherence flags
 - **`services.yaml` role (assessed) + stale `class` reconciled.** `services.yaml` is NOT dead: `compile-config.php` compiles it into ValKey `{site_id}:gcore:config:services` (runtime fast-path) and it is the Tier-2 fallback (`gCore.php`); its `category`/`priority` fields are **load-bearing** — they drive init order (`gCore.php`). The `class:` field, however, is **vestigial for resolution**: `getService` reads it but `ExtensionResolver::resolve()` (from the authoritative `register.php`) **overrides** it (`gCore.php`) — which is exactly why the stale entries never broke anything. **RESOLVED 2026-06-22:** the 6 stub managers' `class:` was corrected from nonexistent `Base\…` paths to their actual `Stubs\…Stub` class, and `AssetManager` from the deleted `AssetManagerStub` to its real `Base\AssetManager` (matching `register.php`); a header note records that `register.php` is authoritative for class resolution. `category`/`priority` left intact (load-bearing). NB: re-run `compile-config.php` to refresh the ValKey copy.

@@ -66,13 +66,6 @@
 - `invalidateBundle(string $manifestId = 'main'): bool` — Invalidate a bundle to trigger rebuild
 - `syncFaceMapping(array $faceMapping): bool` — Sync legacy face_mapping to both old key and new manifest
 
-### `BackupManager`
-<sub>`Modules/Managers/Base/BackupManager/BackupManager.php`</sub>
-
-- `createBackup(string $name, string $path): ?string` — Create a timestamped backup of a file or directory
-- `restoreBackup(string $backupPath, string $targetPath): bool` — Restore a backup over a target path. For directory backups, the
-- `cleanOldBackups(int $retentionDays = 30): int` — Remove backups older than $retentionDays. Returns the count removed
-
 ### `CacheManager`
 <sub>`Modules/Managers/Base/CacheManager/CacheManager.php`</sub>
 
@@ -160,23 +153,6 @@
 - `validateMessage(string $message, string $formatName): array` — Validate message against a format's schema
 - `registerFormats(array $formats): array`
 - `detectFormats(array $messages): array`
-
-### `HtaccessManager`
-<sub>`Modules/Managers/Base/HtaccessManager/HtaccessManager.php`</sub>
-
-- `setupHtaccess(): bool` — Set up .htaccess with gCore security rules
-- `addHtaccessRule(string $rule, string $section = 'Custom'): bool` — Add a custom rule under a named gCore .htaccess section
-- `getHtaccessPath(): ?string` — Resolve the .htaccess file path: configured → WordPress ABSPATH →
-- `generateHtaccessRules(): string` — Canonical gCore security ruleset (includes the empty IP-block section
-- `ensureIPBlockSection(string $htaccessPath): void` — Idempotently ensure the IP-block section exists in .htaccess so
-
-### `IPBlockManager`
-<sub>`Modules/Managers/Base/IPBlockManager/IPBlockManager.php`</sub>
-
-- `blockIP(string $ip, string $reason = '', ?int $duration = null): bool` — Add IP to .htaccess block list
-- `unblockIP(string $ip): bool` — Remove IP from .htaccess block list
-- `getBlockedIPs(): array` — Get list of blocked IPs with metadata
-- `cleanExpiredBlocks(): int` — Clean expired IP blocks. Should be called periodically (e.g. daily cron)
 
 ### `ResourceManager`
 <sub>`Modules/Managers/Base/ResourceManager/ResourceManager.php`</sub>

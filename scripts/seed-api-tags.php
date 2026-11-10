@@ -34,10 +34,7 @@ $MAP = [
     'CookieManager' => ['setCookie','getCookie','deleteCookie','getCookieExpiry','extendCookieExpiry','refreshCookie','getCookiesExpiringSoon','getExpiredCookies','cleanupExpiredTracking','hasConsent','updateConsent','displayConsentBanner','registerExporter','exportPersonalData','registerEraser','erasePersonalData'],
     'ResourceManager' => ['createAssetBundle','loadAsset','batchLoadAssets','optimizeAsset','storeTemplateFragment','discoverTemplatesByCapability','renderTemplateString','loadResource','preloadResources','warmupCache'],
     'AssetManager' => ['storeAsset','getAsset','deleteAsset','listAssets','assetExists','setManifest','getManifest','deleteManifest','listManifests','getBundle','getBundleStatus','invalidateBundle','syncFaceMapping'],
-    'HtaccessManager' => ['setupHtaccess','addHtaccessRule','getHtaccessPath','generateHtaccessRules','ensureIPBlockSection'],
-    'IPBlockManager' => ['blockIP','unblockIP','getBlockedIPs','cleanExpiredBlocks'],
     'VersionManager' => ['getVersion','incrementVersion','decrementVersion','resetVersion','getHistory','clearHistory','incrementAllVersions','registerGroup','getPrefix','generateKey'],
-    'BackupManager' => ['createBackup','restoreBackup','cleanOldBackups'],
 ];
 $curated = [];
 foreach ($MAP as $mgr => $names) foreach ($names as $nm) $curated[$mgr][$nm] = true;

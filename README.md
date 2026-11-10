@@ -47,9 +47,6 @@ Each manager is a singleton reached through `getService()`. The **first-party (B
 | CookieManager | GDPR consent, encrypted cookies, WordPress privacy tools | [docs/README_COOKIE.md](docs/README_COOKIE.md) |
 | VersionManager | Version tracking + cache invalidation, multi-tenant | [docs/README_VERSION.md](docs/README_VERSION.md) |
 | WordPressManager | DB cloning, DTAP env switching, GDPR PII scrub | [docs/README_WORDPRESS.md](docs/README_WORDPRESS.md) |
-| HtaccessManager | Locked `.htaccess` composition + write-out | [docs/README_HTACCESS.md](docs/README_HTACCESS.md) |
-| IPBlockManager | Apache-level IP block/unblock/expire via `.htaccess` | [docs/README_IPBLOCK.md](docs/README_IPBLOCK.md) |
-| BackupManager | Filesystem backup/restore/retention (install/deploy) | [docs/README_BACKUP.md](docs/README_BACKUP.md) |
 
 ### Extension managers - stub in Chapter 1, Pro in Chapter 2
 
@@ -74,7 +71,7 @@ Inert until their package is installed; calling one returns a `stub_mode` marker
 ## Capabilities
 
 - **Service container** - lazy-loads and lifecycles a roster of first-party managers behind a single `getService()` call, in dependency order.
-- **ValKey-native primitives** - distributed cache, state coordination, security (roles, CSRF, JWT, API keys, tiered rate-limiting), error tracking, versioning, cookie consent, asset bundling, `.htaccess` / IP blocking, and a REST layer.
+- **ValKey-native primitives** - distributed cache, state coordination, security (roles, CSRF, JWT, API keys, tiered rate-limiting), error tracking, versioning, cookie consent, asset bundling and a REST layer.
 - **Service discovery** - cross-service lookup queries the constellation's one topology by facet and axis range through the gNode daemon; in-process lookup of a manager uses a local capability→manager map.
 - **Open-core** - eleven manager slots ship as inert stubs and light up when their Chapter-2 `geodineum/gcore-<name>` package is installed, with no change in the calling code.
 - **Per-site isolation** - every key is namespaced by site, so one ValKey backend serves many sites.

@@ -2916,36 +2916,6 @@ parameters:
 			path: Modules/Managers/Base/AssetManager/AssetManager.php
 
 		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\BackupManager\\\\BackupManager\\:\\:getConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/BackupManager/BackupManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\BackupManager\\\\BackupManager\\:\\:getStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/BackupManager/BackupManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\BackupManager\\\\BackupManager\\:\\:initialize\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/BackupManager/BackupManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\BackupManager\\\\BackupManager\\:\\:log\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/BackupManager/BackupManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\BackupManager\\\\BackupManager\\:\\:updateConfig\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/BackupManager/BackupManager.php
-
-		-
-			message: "#^Property gCore\\\\Modules\\\\Managers\\\\Base\\\\BackupManager\\\\BackupManager\\:\\:\\$config type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/BackupManager/BackupManager.php
-
-		-
 			message: "#^Call to an undefined method gCore\\\\Modules\\\\Managers\\\\Base\\\\CacheManager\\\\CacheManager\\:\\:handleError\\(\\)\\.$#"
 			count: 24
 			path: Modules/Managers/Base/CacheManager/CacheManager.php
@@ -3879,71 +3849,6 @@ parameters:
 			message: "#^Property gCore\\\\Modules\\\\Managers\\\\Base\\\\FormatManager\\\\FormatManager\\:\\:\\$useGNode has no type specified\\.$#"
 			count: 1
 			path: Modules/Managers/Base/FormatManager/FormatManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\HtaccessManager\\\\HtaccessManager\\:\\:getConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/HtaccessManager/HtaccessManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\HtaccessManager\\\\HtaccessManager\\:\\:getStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/HtaccessManager/HtaccessManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\HtaccessManager\\\\HtaccessManager\\:\\:initialize\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/HtaccessManager/HtaccessManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\HtaccessManager\\\\HtaccessManager\\:\\:log\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/HtaccessManager/HtaccessManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\HtaccessManager\\\\HtaccessManager\\:\\:updateConfig\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/HtaccessManager/HtaccessManager.php
-
-		-
-			message: "#^Property gCore\\\\Modules\\\\Managers\\\\Base\\\\HtaccessManager\\\\HtaccessManager\\:\\:\\$config type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/HtaccessManager/HtaccessManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:getBlockedIPs\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:getConfig\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:getStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:initialize\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:log\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
-
-		-
-			message: "#^Method gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:updateConfig\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
-
-		-
-			message: "#^Property gCore\\\\Modules\\\\Managers\\\\Base\\\\IPBlockManager\\\\IPBlockManager\\:\\:\\$config type has no value type specified in iterable type array\\.$#"
-			count: 1
-			path: Modules/Managers/Base/IPBlockManager/IPBlockManager.php
 
 		-
 			message: "#^Class gCore\\\\gNode\\\\gNodeClientInterface not found\\.$#"
