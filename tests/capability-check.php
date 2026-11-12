@@ -106,6 +106,52 @@ function suite(string $name, object $store, callable $advance): void {
     $capped = $cap->exchange('demo_site', $cap->issue('demo_site', 'alpha', 'web-2', $now + 60_000, true), 'alpha', $now - 1);
     check('a session end in the past falls back to the link expiry', $capped !== null && $capped['expires_ms'] === $now + 60_000);
 
+    $mailed = $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    check('a code is 8 symbols of the 32-letter alphabet', (bool)preg_match('/\A[0-9A-HJKMNP-TV-Z]{8}\z/', $code));
+    $dump = $store instanceof FakeStore ? json_encode($store->kv) : implode(' ', array_map(fn($k) => (string)$store->r->get($k), $store->r->keys('*')));
+    check('the code is nowhere in the store', strpos($dump, $code) === false);
+    check('a wrong code opens nothing', $cap->exchangeCode('demo_site', 'alpha', 'web-3', $code === 'ZZZZZZZZ' ? 'YYYYYYYY' : 'ZZZZZZZZ') === null);
+    check('another subject\'s code opens nothing', $cap->exchangeCode('demo_site', 'alpha', 'web-1', $code) === null);
+    $typed = strtolower(substr($code, 0, 4) . '-' . substr($code, 4));
+    $byCode = $cap->exchangeCode('demo_site', 'alpha', 'web-3', $typed, $now + 30 * 86400 * 1000);
+    check('the code, typed in lower case with a dash, opens a session', $byCode !== null && $byCode['subject'] === 'web-3' && $byCode['expires_ms'] === $now + 30 * 86400 * 1000);
+    check('the code works once', $cap->exchangeCode('demo_site', 'alpha', 'web-3', $code) === null);
+    check('and its link died with it', $cap->verify('demo_site', $mailed) === null);
+
+    $mailed = $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    check('the link opens a session', $cap->exchange('demo_site', $mailed, 'alpha') !== null);
+    check('and the code died with it', $cap->exchangeCode('demo_site', 'alpha', 'web-3', $code) === null);
+
+    $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $old = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    $mailed = $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    check('a newer mail\'s code replaces the earlier one', $old === $code || $cap->exchangeCode('demo_site', 'alpha', 'web-3', $old) === null);
+    $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    $wrong = $code === 'ZZZZZZZZ' ? 'YYYYYYYY' : 'ZZZZZZZZ';
+    for ($i = 0; $i < 4; $i++) { $cap->exchangeCode('demo_site', 'alpha', 'web-3', $wrong); }
+    check('malformed input is not a try', $cap->exchangeCode('demo_site', 'alpha', 'web-3', 'x!') === null);
+    $fifth = $cap->exchangeCode('demo_site', 'alpha', 'web-3', $code);
+    check('the right code still works after four wrong tries', $fifth !== null);
+    $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    for ($i = 0; $i < 5; $i++) { $cap->exchangeCode('demo_site', 'alpha', 'web-3', $wrong); }
+    check('after five wrong tries the right code is refused', $cap->exchangeCode('demo_site', 'alpha', 'web-3', $code) === null);
+    $mailed = $cap->rotate('demo_site', 'alpha', 'web-3', $now + 5 * 60 * 1000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-3');
+    $advance($now, 5 * 60 * 1000 + 1000);
+    check('five minutes on, code and link are both dead', $cap->exchangeCode('demo_site', 'alpha', 'web-3', $code) === null && $cap->verify('demo_site', $mailed) === null);
+    $thrown = false;
+    try { $cap->issueCode('demo_site', 'alpha', 'web-3'); } catch (\RuntimeException $e) { $thrown = true; }
+    check('no code without a live link', $thrown);
+    $cap->rotate('demo_site', 'alpha', 'web-4', $now + 60_000, true);
+    $code = $cap->issueCode('demo_site', 'alpha', 'web-4');
+    $cap->revoke('demo_site', 'alpha', 'web-4');
+    check('a revoke ends the code', $cap->exchangeCode('demo_site', 'alpha', 'web-4', $code) === null);
+
     $short = $cap->issue('demo_site', 'feed', 'agent-3', $now + 2000);
     $advance($now, 3000);
     check('an expired link grants nothing', $cap->verify('demo_site', $short) === null);

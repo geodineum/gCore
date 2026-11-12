@@ -17,10 +17,18 @@ declare(strict_types=1);
  *   {site}:cap:<sha256(token)>               JSON link record      TTL = expiry
  *   {site}:cap:subject:<scope>:<subject>     JSON {hash, epoch, …} TTL = expiry
  *   {site}:cap:session:<sha256(session id)>  JSON session          TTL = idle
+ *   {site}:cap:code:<scope>:<subject>        JSON {mac, epoch, …}  TTL = expiry
  *
  * A GET-safe verify() never changes anything: mail scanners open every link.
  * exchange() is the only state change, and for single-use links the first
  * exchange deletes the record, so two concurrent exchanges cannot both win.
+ *
+ * A link may carry a short code to type instead (an app installed on a phone's
+ * home screen keeps its own cookies, so a link opened from mail signs in the
+ * browser, not the app). The code is stored as an HMAC under the link secret,
+ * counts its wrong tries, and dies with its link: whichever is used first ends
+ * the other. The try counter is read-modify-write, so a caller that faces the
+ * public also rate-limits code attempts with an atomic counter of its own.
  *
  * @package     gCore
  * @subpackage  Modules\Managers\Base
@@ -44,6 +52,10 @@ class CapabilityManager implements ModuleInterface
     private const SECRET_KEY = 'link_secret';
     private const SCOPE_PATTERN = '/\A[a-z][a-z0-9_]{0,31}\z/';
     private const SUBJECT_PATTERN = '/\A[A-Za-z0-9_.:-]{1,128}\z/';
+
+    /** Crockford's base32: no I, L, O or U, so nothing reads as another symbol. */
+    public const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+    public const CODE_MAX_TRIES = 5;
 
     private const DEFAULTS = [
         'session_idle_seconds' => 7200,
@@ -154,7 +166,73 @@ class CapabilityManager implements ModuleInterface
             }
             $epoch = (int)$index['epoch'] + 1;
         }
+        $this->storage->delete($this->codeKey($siteId, $scope, $subject));
         return $this->write($siteId, $scope, $subject, $epoch, $expiresAtMs, $singleUse);
+    }
+
+    /**
+     * A code of $length symbols from CODE_ALPHABET for the subject's current link (issue or
+     * rotate first); a new code replaces an earlier one. It lives as long as the link.
+     */
+    public function issueCode(string $siteId, string $scope, string $subject, int $length = 8): string
+    {
+        $this->guard($siteId, $scope, $subject);
+        if ($length < 6 || $length > 16) {
+            throw new \InvalidArgumentException('capability: a code has 6 to 16 symbols');
+        }
+        $index = $this->readJson($this->subjectKey($siteId, $scope, $subject));
+        if ($index === null || !empty($index['revoked']) || (string)$index['hash'] === ''
+            || (int)$index['expires_ms'] <= $this->now()) {
+            throw new \RuntimeException('capability: no live link to attach a code to');
+        }
+        $code = '';
+        for ($i = 0; $i < $length; $i++) {
+            $code .= self::CODE_ALPHABET[random_int(0, 31)];
+        }
+        $record = ['mac' => $this->codeMac($siteId, $scope, $subject, (int)$index['epoch'], $code),
+                   'epoch' => (int)$index['epoch'], 'expires_ms' => (int)$index['expires_ms'], 'tries' => 0];
+        $ttl = max(1, intdiv((int)$index['expires_ms'] - $this->now() + 999, 1000));
+        $this->storage->set($this->codeKey($siteId, $scope, $subject), json_encode($record), $ttl);
+        return $code;
+    }
+
+    /**
+     * Trade a typed code for a session, as exchange() does for its link (which it consumes).
+     * Case, spaces, dashes and the look-alikes I/L (for 1) and O (for 0) are forgiven.
+     * After CODE_MAX_TRIES wrong codes the code is gone; the link itself still works.
+     *
+     * @return array|null {session_id, scope, subject, csrf, expires_ms}
+     */
+    public function exchangeCode(string $siteId, string $scope, string $subject, string $code, ?int $sessionExpiresMs = null): ?array
+    {
+        $this->guard($siteId, $scope, $subject);
+        $code = strtr(strtoupper((string)preg_replace('/[\s-]+/', '', $code)), 'ILO', '110');
+        if (!preg_match('/\A[' . self::CODE_ALPHABET . ']{6,16}\z/', $code)) {
+            return null;
+        }
+        $key = $this->codeKey($siteId, $scope, $subject);
+        $record = $this->readJson($key);
+        if ($record === null || (int)$record['expires_ms'] <= $this->now()) {
+            return null;
+        }
+        $index = $this->readJson($this->subjectKey($siteId, $scope, $subject));
+        if ($index === null || !empty($index['revoked']) || (int)$index['epoch'] !== (int)$record['epoch']) {
+            $this->storage->delete($key);
+            return null;
+        }
+        $record['tries'] = (int)$record['tries'] + 1;
+        if ($record['tries'] > self::CODE_MAX_TRIES) {
+            $this->storage->delete($key);
+            return null;
+        }
+        $ttl = max(1, intdiv((int)$record['expires_ms'] - $this->now() + 999, 1000));
+        $this->storage->set($key, json_encode($record), $ttl);
+        if (!hash_equals((string)$record['mac'], $this->codeMac($siteId, $scope, $subject, (int)$record['epoch'], $code))) {
+            return null;
+        }
+        $this->storage->delete($key);
+        $token = $this->derive($siteId, $scope, $subject, (int)$record['epoch'], (int)$index['expires_ms']);
+        return $this->exchange($siteId, $token, $scope, $sessionExpiresMs);
     }
 
     /** Read-only: what a token grants, or null. Safe for a GET. */
@@ -188,8 +266,11 @@ class CapabilityManager implements ModuleInterface
         if ($grant === null || ($expectScope !== null && $grant['scope'] !== $expectScope)) {
             return null;
         }
-        if ($grant['single_use'] && !$this->storage->delete($this->linkKey($siteId, $token))) {
-            return null;
+        if ($grant['single_use']) {
+            if (!$this->storage->delete($this->linkKey($siteId, $token))) {
+                return null;
+            }
+            $this->storage->delete($this->codeKey($siteId, (string)$grant['scope'], (string)$grant['subject']));
         }
         $sessionId = $this->random();
         $idle = (int)$this->config['session_idle_seconds'];
@@ -235,6 +316,7 @@ class CapabilityManager implements ModuleInterface
             return false;
         }
         $this->storage->delete($this->linkKeyForHash($siteId, (string)$index['hash']));
+        $this->storage->delete($this->codeKey($siteId, $scope, $subject));
         $index['hash'] = '';
         $index['revoked'] = true;
         $ttl = max(1, intdiv((int)$index['expires_ms'] - $this->now() + 999, 1000));
@@ -361,6 +443,11 @@ class CapabilityManager implements ModuleInterface
         return is_array($v) ? $v : null;
     }
 
+    private function codeMac(string $siteId, string $scope, string $subject, int $epoch, string $code): string
+    {
+        return hash_hmac('sha256', "code|{$scope}|{$subject}|{$epoch}|{$code}", $this->secret($siteId));
+    }
+
     private function random(): string
     {
         return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
@@ -374,5 +461,6 @@ class CapabilityManager implements ModuleInterface
     private function linkKey(string $siteId, string $token): string { return $this->linkKeyForHash($siteId, hash('sha256', $token)); }
     private function linkKeyForHash(string $siteId, string $hash): string { return '{' . $siteId . '}:cap:' . $hash; }
     private function subjectKey(string $siteId, string $scope, string $subject): string { return '{' . $siteId . '}:cap:subject:' . $scope . ':' . $subject; }
+    private function codeKey(string $siteId, string $scope, string $subject): string { return '{' . $siteId . '}:cap:code:' . $scope . ':' . $subject; }
     private function sessionKey(string $siteId, string $sid): string { return '{' . $siteId . '}:cap:session:' . hash('sha256', $sid); }
 }
