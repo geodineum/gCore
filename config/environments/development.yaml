@@ -33,7 +33,6 @@ security:
     key_rotation_days: 365  # Longer key rotation in development
     use_hardware_security: false  # No hardware security in development
   authentication:
-    require_2fa: false  # No 2FA requirement in development
     password_min_length: 8  # Shorter passwords allowed in development
     brute_force_protection: true  # Still protect against brute force
     session_lifetime: 86400  # Longer sessions in development (24 hours)

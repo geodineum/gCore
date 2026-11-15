@@ -28,7 +28,6 @@ class SecurityManager implements ModuleInterface, SecurityCapabilityInterface {
         'site_id' => 'default',
         'node_id' => 'node1',
         'default_role' => 'guest',
-        'require_2fa' => false,
         'content_security_policy' => [],
         'traits' => [],
     ];
