@@ -339,7 +339,6 @@ managers:
         auth:
           max_attempts: 5
           lockout_duration: 900
-          require_2fa: true
         session:
           max_lifetime: 1800
           require_ssl: true

@@ -39,7 +39,6 @@ $config = [
     'site_id' => 'my_site',
     'node_id' => 'node1',
     'default_role' => 'guest',
-    'require_2fa' => false,
     'csrf_salt' => 'your-secret-salt',
     'cors' => [
         'enabled' => true,

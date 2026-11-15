@@ -225,9 +225,6 @@ $gCore = gcore_init([
         'encryption' => [
             'algorithm' => 'AES-256-GCM',
             'key_rotation_days' => 30
-        ],
-        'authentication' => [
-            'require_2fa' => true
         ]
     ],
     
@@ -292,8 +289,6 @@ security:
   encryption:
     algorithm: AES-256-GCM
     key_rotation_days: 30
-  authentication:
-    require_2fa: true
 
 error:
   logging:

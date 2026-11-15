@@ -30,10 +30,6 @@ theme: gCube             # gCube | your child theme
 #     firewall:
 #       allowed_ips:
 #         - "192.168.1.0/24"
-#     traits:
-#       securityRules:
-#         auth:
-#           require_2fa: false  # Disable 2FA for this site
 
 # Override capabilities for topology registration
 # capabilities:

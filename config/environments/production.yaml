@@ -16,7 +16,6 @@ security:
     key_rotation_days: 30
     use_hardware_security: true
   authentication:
-    require_2fa: true
     password_min_length: 14
     brute_force_protection: true
     session_lifetime: 1800
