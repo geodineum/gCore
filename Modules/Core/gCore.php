@@ -555,7 +555,6 @@ class gCore implements ModuleInterface {
                 'skip_connection_check' => true,  // Faster initialization, lazy connection
                 'debug' => $coreConfig['debug'] ?? $this->config['debug'] ?? false,
                 'batch_size' => 10,
-                'timeout' => 1000,  // 1 second - fail fast if daemon unresponsive
                 'lua_enabled' => true,
                 'metrics_level' => 1,  // Basic metrics (0=none, 1=basic, 2=detailed)
             ];
