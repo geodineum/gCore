@@ -326,6 +326,12 @@ class ErrorManager implements ModuleInterface {
             'line' => $exception->getLine(),
             'trace' => $exception->getTraceAsString()
         ]);
+
+        // The request ends here: answer as PHP itself would, never an empty 200
+        error_log('Uncaught ' . get_class($exception) . ': ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine());
+        if (PHP_SAPI !== 'cli' && !headers_sent()) {
+            http_response_code(500);
+        }
     }
     
     /**
