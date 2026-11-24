@@ -203,19 +203,12 @@ function gcore_early_cache_serve(): void {
                 header('X-Cache: HIT-EARLY');
                 header('X-Cache-Age: ' . (time() - $cached_at));
 
-                // Replay cached headers, minus the ones this path already owns.
-                // The captured set comes from the ORIGINAL uncached render, so it
-                // still carries WordPress's Cache-Control: max-age=0 - replaying
-                // that undoes the max-age=60 set above and browsers refetch the
-                // page on every view instead of using the cache window.
-                if (!empty($data['headers'])) {
-                    $owned = ['cache-control', 'expires', 'pragma', 'etag', 'content-type', 'x-cache', 'x-cache-age'];
-                    foreach ($data['headers'] as $header) {
-                        $name = strtolower(trim(strtok($header, ':')));
-                        if (in_array($name, $owned, true)) {
-                            continue;
-                        }
-                        header($header);
+                // The render's security headers (gTemplate keeps CSP and HSTS with the page): WordPress, which
+                // sends them, does not run on this path. Nothing else from the payload becomes a header.
+                foreach ((array) ($data['headers'] ?? []) as $header) {
+                    $name = strtolower(trim((string) strtok((string) $header, ':')));
+                    if (in_array($name, ['content-security-policy', 'strict-transport-security'], true) && !preg_match('/[\r\n]/', (string) $header)) {
+                        header((string) $header);
                     }
                 }
 
